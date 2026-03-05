@@ -1,0 +1,109 @@
+import boto3
+import zipfile
+import io
+import json
+import os
+
+# Initialize clients
+s3 = boto3.client('s3')
+glue = boto3.client('glue')
+
+def pass_glue(bucket, prefix):
+    # Pass the S3 path as a custom argument starting with '--'
+    print(f'Calling glue with prefix {prefix}*')
+    response = glue.start_job_run(
+        JobName='gemini noaa dummy',
+        Arguments={
+        }
+    )
+    return response['JobRunId']
+
+def move(source, bucket):
+    file_name = source.split('/')[-1]
+    destination_key = f"finished_archive/{file_name}"
+    
+    copy_source = {'Bucket': bucket, 'Key': source}
+
+    try:
+        s3.copy_object(
+            Bucket=bucket, 
+            CopySource=copy_source, 
+            Key=destination_key
+        )
+        print(f"Copied {source} to {destination_key}")
+        
+        s3.delete_object(Bucket=bucket, Key=source)
+        print(f"Deleted original: {source}")
+        
+    except Exception as e:
+        print(f"Error moving file: {e}")
+        raise
+
+def lambda_handler(event, context):
+    # 1. Get bucket and key from the S3 event
+    bucket = event['Records'][0]['s3']['bucket']['name']
+    zip_key = event['Records'][0]['s3']['object']['key']    
+    
+    # Define output path (e.g., folder/data.zip -> folder/processed/data.jsonl)
+    output_prefix = "extracted_data/"    
+    glue_prefix = zip_key.replace('new_archive/', output_prefix).replace('.zip', '')
+    print(f"Processing {zip_key} from {bucket}...")
+
+    local_path = "/tmp/archive.zip"
+    try:
+        s3.download_file(bucket, zip_key, local_path)
+    except Exception as e:
+        print(f"S3 Download failed. Likely IAM permissions or wrong Key: {e}")
+        return
+
+    move(zip_key, bucket)
+
+    try:
+        with zipfile.ZipFile(local_path, 'r') as z:
+            print(f"Success! Found {len(z.namelist())} files.") # -> says numerous file names
+            for filename in z.namelist():
+                if filename.endswith('.json'):
+                    jsonl_content = ""
+                    base_name = os.path.basename(filename).replace('.json', '')
+                    output_key = f"{output_prefix}{base_name}.jsonl"
+                    with z.open(filename) as f:
+                        print(f"Found JSON file: {filename}")
+                        # Load individual JSON and convert to string for JSONL
+                        data = json.load(f)
+                        # Handle if the JSON is a list of objects or a single object
+                        if isinstance(data, list):
+                            for record in data:
+                                jsonl_content += json.dumps(record) + "\n"
+                        else:
+                            jsonl_content += json.dumps(data) + "\n"
+                    s3.put_object(
+                        Bucket=bucket, 
+                        Key=output_key, 
+                        Body=jsonl_content.encode('utf-8')
+                        )
+                    print(f"Successfully wrote JSONL to {output_key}")
+    except zipfile.BadZipFile:
+        # Debug: Check if we actually downloaded an XML error message
+        with open(local_path, 'rb') as f:
+            header = f.read(50)
+            print(f"File Header: {header}")
+        raise
+    finally:
+        # 4. Clean up (Lambda /tmp persists between "warm" starts)
+        if os.path.exists(local_path):
+            os.remove(local_path)
+        s3.put_object(
+            Bucket=bucket, 
+            Key=output_key, 
+            Body=jsonl_content.encode('utf-8')
+            )
+        
+        pass_glue(bucket, glue_prefix)
+
+    
+    
+    
+    return {
+        'statusCode': 200,
+        'body': "test success"
+    }
