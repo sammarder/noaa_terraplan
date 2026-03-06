@@ -31,7 +31,7 @@ glueContext.write_dynamic_frame.from_options(
     frame=datasource,
     connection_type="s3",
     connection_options={
-        "path": "s3://sams-noaa-test-db/parquet/",
+        "path": "s3://${bucket_id}/parquet/",
         "partitionKeys": [] # Add columns here to auto-create folders (e.g. ["date"])
     },
     format="parquet",
