@@ -21,12 +21,30 @@ resource "aws_s3_object" "base_folders" {
     "parquet/",
     "finished_archive/",
     "athena-results/",
-	"new_archive/"
+	"new_archive/",
+	"scripts/"
   ])
 
   bucket       = aws_s3_bucket.noaa_bucket.id
   key          = each.value
   content_type = "application/x-directory"
+}
+
+resource "aws_s3_object" "templated_script" {
+  bucket = aws_s3_bucket.noaa_bucket.id
+  key    = "scripts/process_jsonl.py"
+
+  # Render the file with variables before uploading
+  content = templatefile("${path.module}/scripts/processor.tftpl", {
+    bucket_id     = aws_s3_bucket.noaa_bucket.id
+  })
+
+  content_type = "text/x-python"
+  
+  # Crucial: This ensures S3 updates if the template or variables change
+  etag = md5(templatefile("${path.module}/scripts/processor.tftpl", {
+    bucket_id     = aws_s3_bucket.noaa_bucket.id
+  }))
 }
 
 resource "aws_iam_role" "iam_for_lambda_noaa_east_2" {
@@ -89,6 +107,23 @@ resource "aws_s3_bucket_notification" "bucket_notification" {
   depends_on = [aws_lambda_permission.allow_s3]
 }
 
+resource "aws_glue_job" "jsonl_to_parquet" {
+  name     = "noaa_preprocessor_job"
+  role_arn = "arn:aws:iam::489719310300:role/Glue_role"
+  command {
+    name            = "glueetl"
+    # Point to the S3 path of the uploaded object
+    script_location = "s3://${aws_s3_bucket.noaa_bucket.id}/${aws_s3_object.templated_script.key}"
+  }
+}
+
+resource "aws_glue_catalog_database" "noaa_db" {
+  name = "noaa_processed_data"
+}
+
+
+
+
 resource "aws_iam_role_policy" "lambda_s3_logs_policy" {
   name = "preprocessor_permissions"
   role = aws_iam_role.iam_for_lambda_noaa_east_2.id
@@ -121,7 +156,14 @@ resource "aws_iam_role_policy" "lambda_s3_logs_policy" {
         Resource = [
           "${aws_s3_bucket.noaa_bucket.arn}/*"      # Needed for file operations
         ]
-      }
+      },
+        {
+            "Effect": "Allow",
+            "Action": "glue:StartJobRun",
+            "Resource": [
+                "${aws_glue_job.jsonl_to_parquet.arn}"
+            ]
+        }
     ]
   })
 }
