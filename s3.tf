@@ -1,0 +1,49 @@
+resource "aws_s3_bucket" "noaa_bucket" {
+  bucket = "sams-noaa-test-east-2"
+}
+
+resource "aws_s3_object" "base_folders" {
+  for_each = toset([
+    "extracted_data/",
+    "parquet/",
+    "finished_archive/",
+    "athena-results/",
+    "new_archive/",
+    "scripts/"
+  ])
+
+  bucket       = aws_s3_bucket.noaa_bucket.id
+  key          = each.value
+  content_type = "application/x-directory"
+}
+
+resource "aws_s3_object" "templated_script" {
+  bucket = aws_s3_bucket.noaa_bucket.id
+  key    = "scripts/process_jsonl.py"
+
+  # Render the file with variables before uploading
+  content = templatefile("${path.module}/scripts/processor.tftpl", {
+    bucket_id = aws_s3_bucket.noaa_bucket.id
+  })
+
+  content_type = "text/x-python"
+
+  # Crucial: This ensures S3 updates if the template or variables change
+  etag = md5(templatefile("${path.module}/scripts/processor.tftpl", {
+    bucket_id = aws_s3_bucket.noaa_bucket.id
+  }))
+}
+
+resource "aws_s3_bucket_notification" "bucket_notification" {
+  bucket = aws_s3_bucket.noaa_bucket.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.test_lambda.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "new_archive/"
+    filter_suffix       = ".zip"
+  }
+
+  # This ensures the permission is created BEFORE S3 tries to link to it
+  depends_on = [aws_lambda_permission.allow_s3]
+}
