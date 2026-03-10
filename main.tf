@@ -16,16 +16,6 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 
-# The S3 Gateway Endpoint (The "Magic Link")
-resource "aws_vpc_endpoint" "s3" {
-  vpc_id            = aws_vpc.data_vpc.id
-  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
-  vpc_endpoint_type = "Gateway"
-
-  # This automatically updates your route table to point S3 traffic here
-  route_table_ids = [aws_vpc.data_vpc.main_route_table_id]
-}
-
 
 
 

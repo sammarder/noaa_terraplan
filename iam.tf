@@ -92,20 +92,32 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
   })
 }
 
-resource "aws_iam_role_policy" "glue_policy" {
-  name = "glue_permissions"
-  role = aws_iam_role.glue_proc_role.id
+resource "aws_iam_role_policy" "glue_s3_access" {
+  name = "GlueS3Access"
+  role = aws_iam_role.glue_proc_role.id # The role your job assumes
 
   policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
+    Version = "2012-10-17"
+    Statement = [
       {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "${aws_s3_bucket.noaa_bucket.arn}",
+          "${aws_s3_bucket.noaa_bucket.arn}/*"
+        ]
+      },
+	  {
         "Effect" : "Allow",
         "Action" : [
           "glue:GetConnection"
         ],
         "Resource" : [
-          "arn:aws:glue:us-east-2:489719310300:catalog"
+          "arn:aws:glue:${data.aws_region.current.name}:489719310300:catalog"
         ]       
       }
     ]

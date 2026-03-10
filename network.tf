@@ -51,7 +51,14 @@ resource "aws_glue_connection" "vpc_connector" {
   }
 }
 
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.data_vpc.id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3" 
+  vpc_endpoint_type = "Gateway"
 
+  # This automatically updates your private subnet's routing
+  route_table_ids = [aws_vpc.data_vpc.default_route_table_id] 
+}
 
 
 resource "aws_security_group_rule" "glue_egress" {
