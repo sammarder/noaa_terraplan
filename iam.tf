@@ -1,4 +1,4 @@
-resource "aws_iam_role" "iam_for_lambda_noaa_east_2" {
+resource "aws_iam_role" "lambda_role" {
   name = "preproc_role"
 
   assume_role_policy = jsonencode({
@@ -68,7 +68,7 @@ resource "local_file" "lambda_rendered" {
 
 resource "aws_iam_role_policy" "combined_lambda_policy" {
   name = "preprocessor_consolidated_policy"
-  role = aws_iam_role.iam_for_lambda_noaa_east_2.id
+  role = aws_iam_role.lambda_role.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -165,10 +165,6 @@ resource "aws_iam_role_policy" "glue_crawler_policy" {
   })
 }
 
-
-
-
-
 resource "aws_iam_policy" "crawler_s3_policy" {
   name = "noaa_crawler_s3_access"
 
@@ -193,6 +189,6 @@ resource "aws_iam_role_policy_attachment" "s3_access_attach" {
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
-  role       = aws_iam_role.iam_for_lambda_noaa_east_2.id
+  role       = aws_iam_role.lambda_role.id
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }

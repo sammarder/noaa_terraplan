@@ -23,11 +23,9 @@ resource "aws_glue_crawler" "noaa_parquet_crawler" {
   role          = aws_iam_role.glue_crawler_role.arn
 
   s3_target {
-    # Point this to your Parquet output folder
     path = "s3://${aws_s3_bucket.noaa_bucket.id}/parquet/"
   }
 
-  # This tells the crawler to only update the schema if it changes
   configuration = jsonencode({
     "Version" = 1.0
     "CreatePartitionIndex" : true

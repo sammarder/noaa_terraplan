@@ -7,7 +7,7 @@ data "archive_file" "lambda_zip" {
 resource "aws_lambda_function" "test_lambda" {
   filename      = "lambda_function_payload.zip"
   function_name = "preprocessor"
-  role          = aws_iam_role.iam_for_lambda_noaa_east_2.arn
+  role          = aws_iam_role.lambda_role.arn
   handler       = "s3_lambda_trigger.lambda_handler" # filename.function_name
   timeout       = 120
 
