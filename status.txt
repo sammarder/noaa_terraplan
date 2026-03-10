@@ -1,1 +1,0 @@
-Current status is unable to reach S3 script in glue, will address
