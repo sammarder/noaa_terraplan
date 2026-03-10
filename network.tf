@@ -9,7 +9,12 @@ resource "aws_security_group" "glue_sg" {
   name        = "noaa-glue-vpc-sg"
   description = "Allow Glue to talk to itself and S3"
   vpc_id      = aws_vpc.data_vpc.id
-  egress = [] #Apparently required as AWS auto adds allow all for egress
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
   tags = { Name = "glue-security-group" }
 }
 
@@ -53,19 +58,11 @@ resource "aws_glue_connection" "vpc_connector" {
 
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = aws_vpc.data_vpc.id
-  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3" 
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
   vpc_endpoint_type = "Gateway"
 
   # This automatically updates your private subnet's routing
-  route_table_ids = [aws_vpc.data_vpc.default_route_table_id] 
+  route_table_ids = [aws_vpc.data_vpc.default_route_table_id]
 }
 
 
-resource "aws_security_group_rule" "glue_egress" {
-  type              = "egress"
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.glue_sg.id
-}

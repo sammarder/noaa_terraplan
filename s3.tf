@@ -34,6 +34,17 @@ resource "aws_s3_object" "templated_script" {
   }))
 }
 
+resource "aws_s3_bucket_server_side_encryption_configuration" "noaa_bucket_encrypt" {
+  bucket = aws_s3_bucket.noaa_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.noaa_key.arn
+    }
+  }
+}
+
 resource "aws_s3_bucket_notification" "bucket_notification" {
   bucket = aws_s3_bucket.noaa_bucket.id
 

@@ -87,6 +87,11 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
         Action   = "glue:StartJobRun"
         Effect   = "Allow"
         Resource = aws_glue_job.jsonl_to_parquet.arn
+      },
+      {
+        Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
+        Effect   = "Allow"
+        Resource = aws_kms_key.noaa_key.arn
       }
     ]
   })
@@ -100,8 +105,8 @@ resource "aws_iam_role_policy" "glue_s3_access" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = [
+        Effect : "Allow"
+        Action : [
           "s3:GetObject",
           "s3:PutObject",
           "s3:ListBucket"
@@ -111,14 +116,24 @@ resource "aws_iam_role_policy" "glue_s3_access" {
           "${aws_s3_bucket.noaa_bucket.arn}/*"
         ]
       },
-	  {
+      {
         "Effect" : "Allow",
         "Action" : [
           "glue:GetConnection"
         ],
         "Resource" : [
           "arn:aws:glue:${data.aws_region.current.name}:489719310300:catalog"
-        ]       
+        ]
+      },
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "kms:GenerateDataKey",
+          "kms:Decrypt"
+        ],
+        "Resource" : [
+          aws_kms_key.noaa_key.arn
+        ]
       }
     ]
   })
