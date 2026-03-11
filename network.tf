@@ -18,6 +18,18 @@ resource "aws_security_group" "glue_sg" {
   tags = { Name = "glue-security-group" }
 }
 
+resource "aws_vpc_security_group_ingress_rule" "self_reference" {
+  security_group_id = aws_security_group.glue_sg.id
+
+  # This is the "magic" part: referencing the ID of the group it belongs to
+  referenced_security_group_id = aws_security_group.glue_sg.id
+  
+  from_port   = 0
+  to_port     = 0
+  ip_protocol = "-1" # Allow all internal traffic between members
+  description = "Allow all traffic from nodes in the same SG"
+}
+
 resource "aws_security_group" "lambda_sg" {
   name        = "noaa-lambda-vpc-sg"
   description = "Allow Lambda to trigger Glue and talk to S3"
