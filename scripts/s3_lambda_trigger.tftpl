@@ -77,13 +77,13 @@ def lambda_handler(event, context):
                                 jsonl_content += json.dumps(record) + "\n"
                         else:
                             jsonl_content += json.dumps(data) + "\n"
-					if (len(jsonl_content > 3)):
-					    valid = valid + 1
-						s3.put_object(
-							Bucket=bucket, 
-							Key=output_key, 
-							Body=jsonl_content.encode('utf-8')
-							)
+                    if (len(jsonl_content > 3)):
+                        valid = valid + 1
+                        s3.put_object(
+                            Bucket=bucket, 
+                            Key=output_key, 
+                            Body=jsonl_content.encode('utf-8')
+                            )
                     print(f"Successfully wrote JSONL to {output_key}")
     except zipfile.BadZipFile:
         # Debug: Check if we actually downloaded an XML error message
@@ -96,10 +96,10 @@ def lambda_handler(event, context):
         if os.path.exists(local_path):
             os.remove(local_path)
         if (valid > 0):
-			move(zip_key, bucket)
-			pass_glue(bucket, glue_prefix)
-		elif (valid == 0):
-			print("No data in archive")
+            move(zip_key, bucket)
+            pass_glue(bucket, glue_prefix)
+        elif (valid == 0):
+            print("No data in archive")
 
     
     
