@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "noaa_bucket" {
-  bucket = "sams-noaa-test-east-2"
-  force_destroy  = true
+  bucket        = "sams-noaa-test-east-2"
+  force_destroy = true
 }
 
 resource "aws_s3_object" "base_folders" {

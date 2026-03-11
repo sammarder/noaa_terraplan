@@ -59,6 +59,16 @@ resource "aws_iam_role_policy_attachment" "glue_service_attach2" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
 }
 
+resource "aws_iam_role_policy_attachment" "wind_attach" {
+  role       = aws_iam_role.wind_role.name
+  policy_arn = aws_iam_policy.analyst_access.arn
+}
+
+resource "aws_iam_role_policy_attachment" "temperature_attach" {
+  role       = aws_iam_role.temperature_role.name
+  policy_arn = aws_iam_policy.analyst_access.arn
+}
+
 resource "local_file" "lambda_rendered" {
   content = templatefile("${path.module}/scripts/s3_lambda_trigger.tftpl", {
     glue_job = aws_glue_job.jsonl_to_parquet.id
@@ -139,6 +149,106 @@ resource "aws_iam_role_policy" "glue_s3_access" {
   })
 }
 
+resource "aws_iam_role" "wind_role" {
+  name = "data-lake-wind-role"
+
+  # The Trust Policy: Who can "wear" this role?
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/sammarder"
+          Service = "athena.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role" "temperature_role" {
+  name = "data-lake-temp-role"
+
+  # The Trust Policy: Who can "wear" this role?
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/sammarder"
+          Service = "athena.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_policy" "analyst_access" {
+  name        = "data-analyst-athena-policy"
+  description = "Coarse-grained permissions for Athena and Lake Formation analysts"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      # 1. Athena Service Access
+      {
+        Sid    = "AthenaQueryPermissions"
+        Effect = "Allow"
+        Action = [
+          "athena:StartQueryExecution",
+          "athena:GetQueryExecution",
+          "athena:GetQueryResults",
+          "athena:StopQueryExecution",
+          "athena:ListWorkGroups",
+          "athena:GetWorkGroup"
+        ]
+        Resource = "*" # Or restrict to specific workgroup ARNs
+      },
+      # 2. Glue Catalog Access (Metadata only)
+      {
+        Sid    = "GlueCatalogMetadataAccess"
+        Effect = "Allow"
+        Action = [
+          "glue:GetDatabase",
+          "glue:GetDatabases",
+          "glue:GetTable",
+          "glue:GetTables",
+          "glue:GetPartitions"
+        ]
+        Resource = "*"
+      },
+      # 3. Lake Formation Handshake
+      {
+        Sid    = "LakeFormationAccess"
+        Effect = "Allow"
+        Action = [
+          "lakeformation:GetDataAccess"
+        ]
+        Resource = "*"
+      },
+      # 4. S3 Results Bucket (Writing Query Outputs)
+      {
+        Sid    = "AthenaResultsBucketAccess"
+        Effect = "Allow"
+        Action = [
+          "s3:GetBucketLocation",
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:PutObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::your-athena-results-bucket",
+          "arn:aws:s3:::your-athena-results-bucket/*"
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy" "glue_crawler_policy" {
   name = "preprocessor_permissions"
   role = aws_iam_role.glue_crawler_role.id
@@ -160,32 +270,19 @@ resource "aws_iam_role_policy" "glue_crawler_policy" {
             "aws:ResourceAccount" : "489719310300"
           }
         }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_policy" "crawler_s3_policy" {
-  name = "noaa_crawler_s3_access"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
+      },
       {
-        Effect = "Allow"
-        Action = ["s3:GetObject", "s3:ListBucket"]
-        Resource = [
-          aws_s3_bucket.noaa_bucket.arn,       # Bucket level
-          "${aws_s3_bucket.noaa_bucket.arn}/*" # Object level
+        "Effect" : "Allow",
+        "Action" : [
+          "kms:GenerateDataKey",
+          "kms:Decrypt"
+        ],
+        "Resource" : [
+          aws_kms_key.noaa_key.arn
         ]
       }
     ]
   })
-}
-
-resource "aws_iam_role_policy_attachment" "s3_access_attach" {
-  role       = aws_iam_role.glue_crawler_role.name
-  policy_arn = aws_iam_policy.crawler_s3_policy.arn
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {

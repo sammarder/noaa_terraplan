@@ -39,3 +39,24 @@ resource "aws_ssm_parameter" "lambda_arn" {
   type        = "String"
   value       = aws_lambda_function.test_lambda.arn
 }
+
+resource "aws_ssm_parameter" "glue_catalog_arn" {
+  name        = "/noaa/glue/catalog_arn"
+  description = "The ARN for the NOAA Glue Catalog DB"
+  type        = "String"
+  value       = aws_glue_catalog_database.noaa_db.arn
+}
+
+resource "aws_ssm_parameter" "glue_job_arn" {
+  name        = "/noaa/glue/job_arn"
+  description = "The ARN for the NOAA Glue Job"
+  type        = "String"
+  value       = aws_glue_job.jsonl_to_parquet.arn
+}
+
+resource "aws_ssm_parameter" "glue_crawler_arn" {
+  name        = "/noaa/glue/crawler_arn"
+  description = "The ARN for the NOAA Glue Crawler"
+  type        = "String"
+  value       = aws_glue_crawler.noaa_parquet_crawler.arn
+}

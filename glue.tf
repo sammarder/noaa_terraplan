@@ -31,3 +31,26 @@ resource "aws_glue_crawler" "noaa_parquet_crawler" {
     "CreatePartitionIndex" : true
   })
 }
+
+data "aws_glue_catalog_table" "crawled_table" {
+  database_name = aws_glue_catalog_database.noaa_db.name
+  name          = "parquet" # The Crawler's guess
+}
+
+resource "aws_glue_trigger" "job_to_crawler" {
+  name = "trigger-crawler-after-job"
+  type = "CONDITIONAL"
+
+  # What to do? Start the Crawler
+  actions {
+    crawler_name = aws_glue_crawler.noaa_parquet_crawler.name
+  }
+
+  # When to do it? When the Job succeeds
+  predicate {
+    conditions {
+      job_name = aws_glue_job.jsonl_to_parquet.name
+      state    = "SUCCEEDED"
+    }
+  }
+}

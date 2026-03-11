@@ -12,7 +12,7 @@ def pass_glue(bucket, prefix):
     # Pass the S3 path as a custom argument starting with '--'
     print(f'Calling glue with prefix {prefix}*')
     response = glue.start_job_run(
-        JobName='gemini noaa dummy',
+        JobName='${glue_job}',
         Arguments={
         }
     )
@@ -56,9 +56,10 @@ def lambda_handler(event, context):
         print(f"S3 Download failed. Likely IAM permissions or wrong Key: {e}")
         return
 
-    move(zip_key, bucket)
+    
 
     try:
+	    valid = 0
         with zipfile.ZipFile(local_path, 'r') as z:
             print(f"Success! Found {len(z.namelist())} files.") # -> says numerous file names
             for filename in z.namelist():
@@ -76,11 +77,13 @@ def lambda_handler(event, context):
                                 jsonl_content += json.dumps(record) + "\n"
                         else:
                             jsonl_content += json.dumps(data) + "\n"
-                    s3.put_object(
-                        Bucket=bucket, 
-                        Key=output_key, 
-                        Body=jsonl_content.encode('utf-8')
-                        )
+					if (len(jsonl_content > 3)):
+					    valid = valid + 1
+						s3.put_object(
+							Bucket=bucket, 
+							Key=output_key, 
+							Body=jsonl_content.encode('utf-8')
+							)
                     print(f"Successfully wrote JSONL to {output_key}")
     except zipfile.BadZipFile:
         # Debug: Check if we actually downloaded an XML error message
@@ -92,13 +95,11 @@ def lambda_handler(event, context):
         # 4. Clean up (Lambda /tmp persists between "warm" starts)
         if os.path.exists(local_path):
             os.remove(local_path)
-        s3.put_object(
-            Bucket=bucket, 
-            Key=output_key, 
-            Body=jsonl_content.encode('utf-8')
-            )
-        
-        pass_glue(bucket, glue_prefix)
+        if (valid > 0):
+			move(zip_key, bucket)
+			pass_glue(bucket, glue_prefix)
+		elif (valid == 0):
+			print("No data in archive")
 
     
     
