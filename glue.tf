@@ -22,19 +22,36 @@ resource "aws_glue_crawler" "noaa_parquet_crawler" {
   name          = "noaa_parquet_crawler"
   role          = aws_iam_role.glue_crawler_role.arn
 
-  s3_target {
-    path = "s3://${aws_s3_bucket.noaa_bucket.id}/parquet/"
+  catalog_target {
+    database_name = aws_glue_catalog_table.manual_table.database_name
+    tables        = [aws_glue_catalog_table.manual_table.name]
   }
 
   configuration = jsonencode({
     "Version" = 1.0
     "CreatePartitionIndex" : true
   })
+  schema_change_policy {
+    update_behavior = "UPDATE_IN_DATABASE"
+    delete_behavior = "LOG"
+  }
 }
 
-data "aws_glue_catalog_table" "crawled_table" {
+resource "aws_glue_catalog_table" "manual_table" {
+  name          = "noaa_table"
   database_name = aws_glue_catalog_database.noaa_db.name
-  name          = "parquet" # The Crawler's guess
+  table_type    = "EXTERNAL_TABLE"
+
+  storage_descriptor {
+    location      = "s3://${aws_s3_bucket.noaa_bucket.id}/parquet/"
+    # You must provide a basic format for the Crawler to start
+    input_format  = "org.apache.hadoop.mapred.TextInputFormat" 
+    output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"
+    
+    ser_de_info {
+      serialization_library = "org.openx.data.jsonserde.JsonSerDe"
+    }
+  }
 }
 
 resource "aws_glue_trigger" "job_to_crawler" {
