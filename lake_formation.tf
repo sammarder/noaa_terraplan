@@ -38,3 +38,21 @@ resource "aws_lakeformation_permissions" "crawler_table_perms" {
     wildcard = true 
   }
 }
+
+resource "aws_lakeformation_permissions" "terraform_s3_access" {
+  principal   = data.aws_caller_identity.current.arn # The role running Terraform
+  permissions = ["DATA_LOCATION_ACCESS"]
+
+  data_location {
+    arn = aws_lakeformation_resource.s3_registration.arn
+  }
+}
+
+resource "aws_lakeformation_permissions" "terraform_db_access" {
+  principal   = data.aws_caller_identity.current.arn
+  permissions = ["CREATE_TABLE", "DESCRIBE", "ALTER"]
+
+  database {
+    name = aws_glue_catalog_database.noaa_db.name
+  }
+}

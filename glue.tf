@@ -26,11 +26,7 @@ resource "aws_glue_crawler" "noaa_parquet_crawler" {
     database_name = aws_glue_catalog_table.manual_table.database_name
     tables        = [aws_glue_catalog_table.manual_table.name]
   }
-
-  configuration = jsonencode({
-    "Version" = 1.0
-    "CreatePartitionIndex" : true
-  })
+  
   schema_change_policy {
     update_behavior = "UPDATE_IN_DATABASE"
     delete_behavior = "LOG"
