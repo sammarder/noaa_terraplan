@@ -50,9 +50,10 @@ resource "aws_lakeformation_permissions" "terraform_s3_access" {
 
 resource "aws_lakeformation_permissions" "terraform_db_access" {
   principal   = data.aws_caller_identity.current.arn
-  permissions = ["CREATE_TABLE", "DESCRIBE", "ALTER"]
+  permissions = ["CREATE_TABLE", "DESCRIBE", "ALTER", "DROP"]
 
   database {
     name = aws_glue_catalog_database.noaa_db.name
   }
 }
+

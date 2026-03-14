@@ -49,8 +49,6 @@ resource "aws_security_group" "lambda_sg" {
   tags = { Name = "lambda-security-group" }
 }
 
-
-
 resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.data_vpc.id
   cidr_block        = "10.0.1.0/24"

@@ -5,6 +5,13 @@ resource "aws_ssm_parameter" "bucket_arn" {
   value       = aws_s3_bucket.noaa_bucket.arn
 }
 
+resource "aws_ssm_parameter" "bucket_name" {
+  name        = "/noaa/s3/bucket_name"
+  description = "The name for the NOAA test bucket"
+  type        = "String"
+  value       = aws_s3_bucket.noaa_bucket.id
+}
+
 resource "aws_ssm_parameter" "key_arn" {
   name        = "/noaa/kms/key_arn"
   description = "The ARN for the NOAA kms key"
@@ -33,11 +40,18 @@ resource "aws_ssm_parameter" "iam_glue_crawler_arn" {
   value       = aws_iam_role.glue_crawler_role.arn
 }
 
-resource "aws_ssm_parameter" "lambda_arn" {
-  name        = "/noaa/lambda/function_arn"
-  description = "The ARN for the NOAA Lambda Function"
+resource "aws_ssm_parameter" "lambda_preproc_arn" {
+  name        = "/noaa/lambda/preprocessor_arn"
+  description = "The ARN for the NOAA Preprocessor Lambda Function"
   type        = "String"
-  value       = aws_lambda_function.test_lambda.arn
+  value       = aws_lambda_function.s3_lambda.arn
+}
+
+resource "aws_ssm_parameter" "lambda_archive_arn" {
+  name        = "/noaa/lambda/archiver_arn"
+  description = "The ARN for the NOAA Archiver Lambda Function"
+  type        = "String"
+  value       = aws_lambda_function.archive_lambda.arn
 }
 
 resource "aws_ssm_parameter" "glue_catalog_arn" {
@@ -59,4 +73,11 @@ resource "aws_ssm_parameter" "glue_crawler_arn" {
   description = "The ARN for the NOAA Glue Crawler"
   type        = "String"
   value       = aws_glue_crawler.noaa_parquet_crawler.arn
+}
+
+resource "aws_ssm_parameter" "secondary_account_id" {
+  name        = "/noaa/org/org_id"
+  description = "The ARN for the NOAA Analyst Account"
+  type        = "String"
+  value       = aws_organizations_account.analyst_account.id
 }

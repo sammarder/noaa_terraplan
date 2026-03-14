@@ -69,12 +69,7 @@ resource "aws_iam_role_policy_attachment" "temperature_attach" {
   policy_arn = aws_iam_policy.analyst_access.arn
 }
 
-resource "local_file" "lambda_rendered" {
-  content = templatefile("${path.module}/scripts/s3_lambda_trigger.tftpl", {
-    glue_job = aws_glue_job.jsonl_to_parquet.id
-  })
-  filename = "${path.module}/scripts/s3_lambda_trigger.py"
-}
+
 
 resource "aws_iam_role_policy" "combined_lambda_policy" {
   name = "preprocessor_consolidated_policy"
@@ -94,14 +89,19 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
         Resource = "${aws_s3_bucket.noaa_bucket.arn}/*"
       },
       {
-        Action   = "glue:StartJobRun"
-        Effect   = "Allow"
-        Resource = aws_glue_job.jsonl_to_parquet.arn
-      },
-      {
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
         Effect   = "Allow"
         Resource = aws_kms_key.noaa_key.arn
+      },
+	  {
+        Effect   = "Allow"
+        Action   = [
+          "ssm:GetParameter",
+          "ssm:GetParameters",
+          "ssm:GetParametersByPath"
+        ]
+        # Replace with your specific parameter ARN for better security
+        Resource = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/noaa/*"
       }
     ]
   })
@@ -152,7 +152,6 @@ resource "aws_iam_role_policy" "glue_s3_access" {
 resource "aws_iam_role" "wind_role" {
   name = "data-lake-wind-role"
 
-  # The Trust Policy: Who can "wear" this role?
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -160,7 +159,7 @@ resource "aws_iam_role" "wind_role" {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/sammarder"
+          AWS = "arn:aws:iam::${aws_organizations_account.analyst_account.id}:root"
           Service = "athena.amazonaws.com"
         }
       }
@@ -171,7 +170,6 @@ resource "aws_iam_role" "wind_role" {
 resource "aws_iam_role" "temperature_role" {
   name = "data-lake-temp-role"
 
-  # The Trust Policy: Who can "wear" this role?
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -179,7 +177,7 @@ resource "aws_iam_role" "temperature_role" {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/sammarder"
+		  AWS = "arn:aws:iam::${aws_organizations_account.analyst_account.id}:root"
           Service = "athena.amazonaws.com"
         }
       }
@@ -267,7 +265,7 @@ resource "aws_iam_role_policy" "glue_crawler_policy" {
         ],
         "Condition" : {
           "StringEquals" : {
-            "aws:ResourceAccount" : "489719310300"
+            "aws:ResourceAccount" : "${data.aws_caller_identity.current.account_id}"
           }
         }
       },
