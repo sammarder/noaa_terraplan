@@ -11,6 +11,11 @@ resource "aws_glue_job" "jsonl_to_parquet" {
   worker_type       = "G.1X"
   number_of_workers = 2 # Minimum for Spark
   connections       = [aws_glue_connection.vpc_connector.name]
+  
+  default_arguments = {
+    # Recommended extras for data engineers:
+    "--enable-metrics"                    = "true"
+  }
 }
 
 resource "aws_glue_catalog_database" "noaa_db" {

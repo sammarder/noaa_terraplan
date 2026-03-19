@@ -89,6 +89,11 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
         Resource = "${aws_s3_bucket.noaa_bucket.arn}/*"
       },
       {
+        Action   = ["s3:ListBucket"]
+        Effect   = "Allow"
+        Resource = "${aws_s3_bucket.noaa_bucket.arn}"
+      },
+      {
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
         Effect   = "Allow"
         Resource = aws_kms_key.noaa_key.arn

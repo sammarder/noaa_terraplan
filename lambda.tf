@@ -17,7 +17,8 @@ resource "aws_lambda_function" "archive_lambda" {
   function_name = "archiver"
   role          = aws_iam_role.lambda_role.arn
   handler       = "archive_lambda.lambda_handler" # filename.function_name
-  timeout       = 120
+  timeout       = 300
+  memory_size = 1024
   source_code_hash = data.archive_file.archive_lambda_zip.output_base64sha256
 
   

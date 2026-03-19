@@ -41,28 +41,44 @@ def clear_archive(keys, bucket):
 
 def lambda_handler(event, context):
     now = datetime.now()
-    key = "finished_archive/glued_" + now.strftime("%Y-%m-%d") + ".zip"
+    print("Starting the archiving process")
+    target_key = f"finished_archive/glued_{now.strftime('%Y-%m-%d')}.zip"
     bucket_name = get_ssm_value("/noaa/s3/bucket_name")
-    #TODO finish out logic, right now it creates an archive and stores it, I want it to remove the jsonl
     prefix = "extracted_data/"
     
-    s3_folder = s3.list_objects_v2(Bucket = bucket_name, Prefix = prefix)
-    
-    file_keys = [f['Key'] for f in s3_folder.get('Contents', [])]
-    
+    # 1. Get file list (Note: This only gets first 1000 files)
+    response = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+    file_keys = [obj['Key'] for obj in response.get('Contents', []) if obj['Key'] != prefix]
+    print("Found " + len(file_keys) + " files")
+
+    if not file_keys:
+        return {'statusCode': 200, 'body': 'No files to archive'}
+
     zip_buffer = io.BytesIO()
     
-    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
-        for file in file_keys:
-            response = s3.get_object(bucket_name, file)
-            zip_buffer = writestr(file_key, response['Body'].read())
+    # 2. Corrected Zip Logic
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
+        for file_key in file_keys:
+            # Get the object from S3
+            s3_obj = s3.get_object(Bucket=bucket_name, Key=file_key)
+            # Use only the filename (not the full path) inside the zip
+            inner_file_name = file_key.split('/')[-1]
+            zip_file.writestr(inner_file_name, s3_obj['Body'].read())
             
+    print("Finished buffering the zip file")
+            
+    # 3. Upload the Archive
     zip_buffer.seek(0)
-    s3.put_object(Bucket = bucket, key = key, Body=zip_buffer.getvalue())
+    s3.put_object(
+        Bucket=bucket_name, 
+        Key=target_key, 
+        Body=zip_buffer.getvalue()
+    )
     
-    clear_archive(file_keys, bucket)
+    # 4. Cleanup (Ensure clear_archive is defined to delete the list of keys)
+    clear_archive(file_keys, bucket_name)
 
     return {
         'statusCode': 200,
-        'body': "test success"
+        'body': f"Archived {len(file_keys)} files to {target_key}"
     }
