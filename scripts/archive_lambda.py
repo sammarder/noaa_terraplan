@@ -49,7 +49,7 @@ def lambda_handler(event, context):
     # 1. Get file list (Note: This only gets first 1000 files)
     response = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
     file_keys = [obj['Key'] for obj in response.get('Contents', []) if obj['Key'] != prefix]
-    print("Found " + len(file_keys) + " files")
+    print(f"Found {len(file_keys)} files")
 
     if not file_keys:
         return {'statusCode': 200, 'body': 'No files to archive'}
@@ -59,6 +59,7 @@ def lambda_handler(event, context):
     # 2. Corrected Zip Logic
     with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
         for file_key in file_keys:
+            print(f"Working on {file_key}")
             # Get the object from S3
             s3_obj = s3.get_object(Bucket=bucket_name, Key=file_key)
             # Use only the filename (not the full path) inside the zip
