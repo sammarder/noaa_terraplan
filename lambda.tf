@@ -34,12 +34,14 @@ resource "aws_lambda_permission" "allow_s3" {
   source_arn    = aws_s3_bucket.noaa_bucket.arn
 }
 
-resource "aws_lambda_permission" "allow_eventbridge" {
-  statement_id  = "AllowExecutionFromEventBridge"
+
+
+resource "aws_lambda_permission" "allow_states" {
+  statement_id  = "AllowExecutionFromStateFunction"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.archive_lambda.function_name
-  principal     = "events.amazonaws.com"
-  source_arn    = aws_cloudwatch_event_rule.glue_success_rule.arn
+  principal     = "states.amazonaws.com"
+  source_arn    = aws_sfn_state_machine.noaa_pipeline.arn
 }
 
 data "archive_file" "s3_lambda_zip" {

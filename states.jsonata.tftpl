@@ -1,0 +1,77 @@
+{
+  "Comment": "A description of my state machine",
+  "StartAt": "DataCheck",
+  "States": {
+    "DataCheck": {
+      "Type": "Task",
+      "Arguments": {
+        "Bucket": "${s3_bucket}",
+        "Prefix": "extracted_data/"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:s3:listObjectsV2",
+      "Next": "IsBucketEmpty",
+      "Output": {
+        "my_count": "{% $states.result.KeyCount %}"
+      }
+    },
+    "Run Glue": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun.sync",
+      "Arguments": {
+        "JobName": "${glue_job}"
+      },
+      "Next": "Parallel"
+    },
+    "Parallel": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Archive Data",
+          "States": {
+            "Archive Data": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Output": "{% $states.result.Payload %}",
+              "Arguments": {
+                "FunctionName": "${lambda_archiver}",
+                "Payload": "{% $states.input %}"
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Update Schema",
+          "States": {
+            "Update Schema": {
+              "Type": "Task",
+              "Arguments": {
+                "Name": "${crawler}"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:glue:startCrawler",
+              "End": true
+            }
+          }
+        }
+      ],
+      "Next": "Upload complete"
+    },
+    "Upload complete": {
+      "Type": "Succeed"
+    },
+    "No Files": {
+      "Type": "Succeed"
+    },
+    "IsBucketEmpty": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Condition": "{% $states.input.my_count > 0 %}",
+          "Next": "Run Glue"
+        }
+      ],
+      "Default": "No Files"
+    }
+  },
+  "QueryLanguage": "JSONata"
+}

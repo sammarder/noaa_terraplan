@@ -32,6 +32,23 @@ resource "aws_iam_role" "glue_crawler_role" {
   })
 }
 
+resource "aws_iam_role" "noaa_sf_role" {
+  name = "noaa_sf_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "states.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role" "glue_proc_role" {
   name = "noaa_glue_role"
 
@@ -49,12 +66,12 @@ resource "aws_iam_role" "glue_proc_role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "glue_service_attach" {
+resource "aws_iam_role_policy_attachment" "glue_service_crawler_attach" {
   role       = aws_iam_role.glue_crawler_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
 }
 
-resource "aws_iam_role_policy_attachment" "glue_service_attach2" {
+resource "aws_iam_role_policy_attachment" "glue_service_proc_attach" {
   role       = aws_iam_role.glue_proc_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
 }
@@ -105,8 +122,53 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
           "ssm:GetParameters",
           "ssm:GetParametersByPath"
         ]
-        # Replace with your specific parameter ARN for better security
         Resource = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/noaa/*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "step_func_policy" {
+  name = "sf_consolidated_policy"
+  role = aws_iam_role.noaa_sf_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+        Effect   = "Allow"
+        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
+      },
+      {
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+        Effect   = "Allow"
+        Resource = "${aws_s3_bucket.noaa_bucket.arn}/*"
+      },
+	  {
+        Action   = "lambda:InvokeFunction"
+        Effect   = "Allow"
+        Resource = "${aws_lambda_function.archive_lambda.arn}:*"
+      },
+      {
+        Action   = ["s3:ListBucket"]
+        Effect   = "Allow"
+        Resource = "${aws_s3_bucket.noaa_bucket.arn}"
+      },
+      {
+        Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
+        Effect   = "Allow"
+        Resource = aws_kms_key.noaa_key.arn
+      },
+	  {
+        Action   = ["glue:StartJobRun", "glue:GetJobRun", "glue:BatchStopJobRun"]
+        Effect   = "Allow"
+        Resource = aws_glue_job.jsonl_to_parquet.arn
+      },
+	  {
+        Action   = ["glue:StartCrawler", "glue:GetCrawler"]
+        Effect   = "Allow"
+        Resource = aws_glue_crawler.noaa_parquet_crawler.arn
       }
     ]
   })
@@ -124,7 +186,8 @@ resource "aws_iam_role_policy" "glue_s3_access" {
         Action : [
           "s3:GetObject",
           "s3:PutObject",
-          "s3:ListBucket"
+          "s3:ListBucket",
+		  "s3:DeleteObject"
         ]
         Resource = [
           "${aws_s3_bucket.noaa_bucket.arn}",
@@ -171,6 +234,8 @@ resource "aws_iam_role" "wind_role" {
     ]
   })
 }
+
+
 
 resource "aws_iam_role" "temperature_role" {
   name = "data-lake-temp-role"

@@ -1,5 +1,9 @@
+locals {
+  glue_job_name = "noaa_processor_job"
+}
+
 resource "aws_glue_job" "jsonl_to_parquet" {
-  name     = "noaa_preprocessor_job"
+  name     = local.glue_job_name
   role_arn = aws_iam_role.glue_proc_role.arn
   command {
     name = "glueetl"
@@ -9,14 +13,34 @@ resource "aws_glue_job" "jsonl_to_parquet" {
   }
   glue_version      = "5.0"
   worker_type       = "G.1X"
-  number_of_workers = 2 # Minimum for Spark
+  number_of_workers = 2 
   connections       = [aws_glue_connection.vpc_connector.name]
-  
+  timeout = 10
   default_arguments = {
-    # Recommended extras for data engineers:
-    "--enable-metrics"                    = "true"
+    "--enable-metrics" = "true"
+	"--use-postgres-driver" = "true"
   }
 }
+
+resource "aws_s3_object" "templated_script" {
+  bucket = aws_s3_bucket.noaa_bucket.id
+  key    = "scripts/process_jsonl.py"
+
+  # Render the file with variables before uploading
+  content = templatefile("${path.module}/scripts/processor.tftpl", {
+    bucket_id = aws_s3_bucket.noaa_bucket.id
+    job_name = local.glue_job_name
+  })
+
+  content_type = "text/x-python"
+
+  # Crucial: This ensures S3 updates if the template or variables change
+  etag = md5(templatefile("${path.module}/scripts/processor.tftpl", {
+    bucket_id = aws_s3_bucket.noaa_bucket.id
+	job_name = local.glue_job_name
+  }))
+}
+
 
 resource "aws_glue_catalog_database" "noaa_db" {
   name = "noaa_processed_data"

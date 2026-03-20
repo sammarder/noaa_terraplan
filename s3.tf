@@ -18,22 +18,6 @@ resource "aws_s3_object" "base_folders" {
   content_type = "application/x-directory"
 }
 
-resource "aws_s3_object" "templated_script" {
-  bucket = aws_s3_bucket.noaa_bucket.id
-  key    = "scripts/process_jsonl.py"
-
-  # Render the file with variables before uploading
-  content = templatefile("${path.module}/scripts/processor.tftpl", {
-    bucket_id = aws_s3_bucket.noaa_bucket.id
-  })
-
-  content_type = "text/x-python"
-
-  # Crucial: This ensures S3 updates if the template or variables change
-  etag = md5(templatefile("${path.module}/scripts/processor.tftpl", {
-    bucket_id = aws_s3_bucket.noaa_bucket.id
-  }))
-}
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "noaa_bucket_encrypt" {
   bucket = aws_s3_bucket.noaa_bucket.id

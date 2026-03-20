@@ -81,3 +81,17 @@ resource "aws_ssm_parameter" "secondary_account_id" {
   type        = "String"
   value       = aws_organizations_account.analyst_account.id
 }
+
+resource "aws_ssm_parameter" "glue_job_name" {
+  name        = "/noaa/glue/job_name"
+  description = "The Name for the NOAA Glue Job"
+  type        = "String"
+  value       = aws_glue_job.jsonl_to_parquet.name
+}
+
+resource "aws_ssm_parameter" "glue_crawler_name" {
+  name        = "/noaa/glue/crawler_name"
+  description = "The Name for the NOAA Glue Job"
+  type        = "String"
+  value       = aws_glue_crawler.noaa_parquet_crawler.name
+}
