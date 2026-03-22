@@ -103,12 +103,12 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
       {
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Effect   = "Allow"
-        Resource = "${aws_s3_bucket.noaa_bucket.arn}/*"
+        Resource = "${module.storage.bucket_arn}/*"
       },
       {
         Action   = ["s3:ListBucket"]
         Effect   = "Allow"
-        Resource = "${aws_s3_bucket.noaa_bucket.arn}"
+        Resource = "${module.storage.bucket_arn}"
       },
       {
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
@@ -143,17 +143,17 @@ resource "aws_iam_role_policy" "step_func_policy" {
       {
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Effect   = "Allow"
-        Resource = "${aws_s3_bucket.noaa_bucket.arn}/*"
+        Resource = "${module.storage.bucket_arn}/*"
       },
 	  {
         Action   = "lambda:InvokeFunction"
         Effect   = "Allow"
-        Resource = "${aws_lambda_function.archive_lambda.arn}"
+        Resource = "${module.lambda.archiver_arn}"
       },
       {
         Action   = ["s3:ListBucket"]
         Effect   = "Allow"
-        Resource = "${aws_s3_bucket.noaa_bucket.arn}"
+        Resource = "${module.storage.bucket_arn}"
       },
       {
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
@@ -190,8 +190,8 @@ resource "aws_iam_role_policy" "glue_s3_access" {
 		  "s3:DeleteObject"
         ]
         Resource = [
-          "${aws_s3_bucket.noaa_bucket.arn}",
-          "${aws_s3_bucket.noaa_bucket.arn}/*"
+          "${module.storage.bucket_arn}",
+          "${module.storage.bucket_arn}/*"
         ]
       },
       {
@@ -331,7 +331,7 @@ resource "aws_iam_role_policy" "glue_crawler_policy" {
           "s3:PutObject"
         ],
         "Resource" : [
-          "${aws_s3_bucket.noaa_bucket.arn}/parquet/*"
+          "${module.storage.bucket_arn}/parquet/*"
         ],
         "Condition" : {
           "StringEquals" : {

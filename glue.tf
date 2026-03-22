@@ -8,7 +8,7 @@ resource "aws_glue_job" "jsonl_to_parquet" {
   command {
     name = "glueetl"
     # Point to the S3 path of the uploaded object
-    script_location = "s3://${aws_s3_bucket.noaa_bucket.id}/${aws_s3_object.templated_script.key}"
+    script_location = "s3://${module.storage.bucket_id}/${aws_s3_object.templated_script.key}"
     python_version  = "3"
   }
   glue_version      = "5.0"
@@ -23,12 +23,12 @@ resource "aws_glue_job" "jsonl_to_parquet" {
 }
 
 resource "aws_s3_object" "templated_script" {
-  bucket = aws_s3_bucket.noaa_bucket.id
+  bucket = module.storage.bucket_id
   key    = "scripts/process_jsonl.py"
 
   # Render the file with variables before uploading
   content = templatefile("${path.module}/scripts/processor.tftpl", {
-    bucket_id = aws_s3_bucket.noaa_bucket.id
+    bucket_id = module.storage.bucket_id
     job_name = local.glue_job_name
   })
 
@@ -36,7 +36,7 @@ resource "aws_s3_object" "templated_script" {
 
   # Crucial: This ensures S3 updates if the template or variables change
   etag = md5(templatefile("${path.module}/scripts/processor.tftpl", {
-    bucket_id = aws_s3_bucket.noaa_bucket.id
+    bucket_id = module.storage.bucket_id
 	job_name = local.glue_job_name
   }))
 }
@@ -68,7 +68,7 @@ resource "aws_glue_catalog_table" "manual_table" {
   table_type    = "EXTERNAL_TABLE"
 
   storage_descriptor {
-    location      = "s3://${aws_s3_bucket.noaa_bucket.id}/parquet/"
+    location      = "s3://${module.storage.bucket_id}/parquet/"
     # You must provide a basic format for the Crawler to start
     input_format  = "org.apache.hadoop.mapred.TextInputFormat" 
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"

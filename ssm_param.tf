@@ -2,14 +2,14 @@ resource "aws_ssm_parameter" "bucket_arn" {
   name        = "/noaa/s3/bucket_arn"
   description = "The ARN for the NOAA test bucket"
   type        = "String"
-  value       = aws_s3_bucket.noaa_bucket.arn
+  value       = module.storage.bucket_arn
 }
 
 resource "aws_ssm_parameter" "bucket_name" {
   name        = "/noaa/s3/bucket_name"
   description = "The name for the NOAA test bucket"
   type        = "String"
-  value       = aws_s3_bucket.noaa_bucket.id
+  value       = module.storage.bucket_id
 }
 
 resource "aws_ssm_parameter" "key_arn" {
@@ -44,14 +44,14 @@ resource "aws_ssm_parameter" "lambda_preproc_arn" {
   name        = "/noaa/lambda/preprocessor_arn"
   description = "The ARN for the NOAA Preprocessor Lambda Function"
   type        = "String"
-  value       = aws_lambda_function.s3_lambda.arn
+  value       = module.lambda.preproc_arn
 }
 
 resource "aws_ssm_parameter" "lambda_archive_arn" {
   name        = "/noaa/lambda/archiver_arn"
   description = "The ARN for the NOAA Archiver Lambda Function"
   type        = "String"
-  value       = aws_lambda_function.archive_lambda.arn
+  value       = module.lambda.archiver_arn
 }
 
 resource "aws_ssm_parameter" "glue_catalog_arn" {
