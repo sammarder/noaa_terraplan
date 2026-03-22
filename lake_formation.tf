@@ -2,7 +2,7 @@
 resource "aws_lakeformation_data_lake_settings" "admin" {
   admins = [
     data.aws_caller_identity.current.arn, 
-    aws_iam_role.glue_proc_role.arn
+    module.permission.glue_proc_role
   ]
 
   create_database_default_permissions {
@@ -27,7 +27,7 @@ resource "aws_lakeformation_resource" "s3_registration" {
 
 # 3. Permissions: These MUST point to the registration, not just the bucket
 resource "aws_lakeformation_permissions" "crawler_s3_access" {
-  principal   = aws_iam_role.glue_crawler_role.arn
+  principal   = module.permission.glue_crawler_role
   permissions = ["DATA_LOCATION_ACCESS"]
 
   data_location {
@@ -47,7 +47,7 @@ resource "aws_lakeformation_permissions" "terraform_s3_access" {
 
 # 4. Database Permissions: Ensure the DB exists first
 resource "aws_lakeformation_permissions" "crawler_database_access" {
-  principal   = aws_iam_role.glue_crawler_role.arn
+  principal   = module.permission.glue_crawler_role
   permissions = ["CREATE_TABLE", "ALTER", "DESCRIBE"]
 
   database {
@@ -69,7 +69,7 @@ resource "aws_lakeformation_permissions" "terraform_db_access" {
 
 # 5. Table Wildcard Permissions
 resource "aws_lakeformation_permissions" "crawler_table_perms" {
-  principal   = aws_iam_role.glue_crawler_role.arn
+  principal   = module.permission.glue_crawler_role
   permissions = ["ALL", "ALTER", "DESCRIBE", "INSERT"]
 
   table {

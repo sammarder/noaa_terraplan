@@ -98,22 +98,22 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
       {
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Effect   = "Allow"
-        Resource = "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:*"
+        Resource = "arn:aws:logs:${var.region}:${var.caller_identity}:*"
       },
       {
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Effect   = "Allow"
-        Resource = "${module.storage.bucket_arn}/*"
+        Resource = "${var.bucket}/*"
       },
       {
         Action   = ["s3:ListBucket"]
         Effect   = "Allow"
-        Resource = "${module.storage.bucket_arn}"
+        Resource = "${var.bucket}"
       },
       {
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
         Effect   = "Allow"
-        Resource = aws_kms_key.noaa_key.arn
+        Resource = var.key_arn
       },
 	  {
         Effect   = "Allow"
@@ -122,7 +122,7 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
           "ssm:GetParameters",
           "ssm:GetParametersByPath"
         ]
-        Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/noaa/*"
+        Resource = "arn:aws:ssm:${var.region}:${var.caller_identity}:parameter/noaa/*"
       }
     ]
   })
@@ -138,37 +138,37 @@ resource "aws_iam_role_policy" "step_func_policy" {
       {
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Effect   = "Allow"
-        Resource = "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:*"
+        Resource = "arn:aws:logs:${var.region}:${var.caller_identity}:*"
       },
       {
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Effect   = "Allow"
-        Resource = "${module.storage.bucket_arn}/*"
+        Resource = "${var.bucket}/*"
       },
 	  {
         Action   = "lambda:InvokeFunction"
         Effect   = "Allow"
-        Resource = "${module.lambda.archiver_arn}"
+        Resource = "${var.archiver_arn}"
       },
       {
         Action   = ["s3:ListBucket"]
         Effect   = "Allow"
-        Resource = "${module.storage.bucket_arn}"
+        Resource = "${var.bucket}"
       },
       {
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
         Effect   = "Allow"
-        Resource = aws_kms_key.noaa_key.arn
+        Resource = var.key_arn
       },
 	  {
         Action   = ["glue:StartJobRun", "glue:GetJobRun", "glue:BatchStopJobRun"]
         Effect   = "Allow"
-        Resource = aws_glue_job.jsonl_to_parquet.arn
+        Resource = var.glue_job
       },
 	  {
         Action   = ["glue:StartCrawler", "glue:GetCrawler"]
         Effect   = "Allow"
-        Resource = aws_glue_crawler.noaa_parquet_crawler.arn
+        Resource = var.glue_crawler
       }
     ]
   })
@@ -190,8 +190,8 @@ resource "aws_iam_role_policy" "glue_s3_access" {
 		  "s3:DeleteObject"
         ]
         Resource = [
-          "${module.storage.bucket_arn}",
-          "${module.storage.bucket_arn}/*"
+          "${var.bucket}",
+          "${var.bucket}/*"
         ]
       },
       {
@@ -200,7 +200,7 @@ resource "aws_iam_role_policy" "glue_s3_access" {
           "glue:GetConnection"
         ],
         "Resource" : [
-          "arn:aws:glue:${var.region}:${data.aws_caller_identity.current.account_id}:catalog"
+          "arn:aws:glue:${var.region}:${var.caller_identity}:catalog"
         ]
       },
       {
@@ -210,7 +210,7 @@ resource "aws_iam_role_policy" "glue_s3_access" {
           "kms:Decrypt"
         ],
         "Resource" : [
-          aws_kms_key.noaa_key.arn
+          var.key_arn
         ]
       }
     ]
@@ -227,7 +227,7 @@ resource "aws_iam_role" "wind_role" {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${aws_organizations_account.analyst_account.id}:root"
+          AWS = "arn:aws:iam::${var.analyst_account}:root"
           Service = "athena.amazonaws.com"
         }
       }
@@ -247,7 +247,7 @@ resource "aws_iam_role" "temperature_role" {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
-		  AWS = "arn:aws:iam::${aws_organizations_account.analyst_account.id}:root"
+		  AWS = "arn:aws:iam::${var.analyst_account}:root"
           Service = "athena.amazonaws.com"
         }
       }
@@ -257,7 +257,7 @@ resource "aws_iam_role" "temperature_role" {
 
 resource "aws_iam_policy" "analyst_access" {
   name        = "data-analyst-athena-policy"
-  description = "Coarse-grained permissions for Athena and Lake Formation analysts"
+  description = "This is not used at the moment"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -331,11 +331,11 @@ resource "aws_iam_role_policy" "glue_crawler_policy" {
           "s3:PutObject"
         ],
         "Resource" : [
-          "${module.storage.bucket_arn}/parquet/*"
+          "${var.bucket}/parquet/*"
         ],
         "Condition" : {
           "StringEquals" : {
-            "aws:ResourceAccount" : "${data.aws_caller_identity.current.account_id}"
+            "aws:ResourceAccount" : "${var.caller_identity}"
           }
         }
       },
@@ -346,7 +346,7 @@ resource "aws_iam_role_policy" "glue_crawler_policy" {
           "kms:Decrypt"
         ],
         "Resource" : [
-          aws_kms_key.noaa_key.arn
+          var.key_arn
         ]
       }
     ]

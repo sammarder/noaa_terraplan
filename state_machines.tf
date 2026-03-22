@@ -1,6 +1,6 @@
 resource "aws_sfn_state_machine" "noaa_pipeline" {
   name     = "noaa-data-pipeline"
-  role_arn = aws_iam_role.noaa_sf_role.arn
+  role_arn = module.permission.sf_role
   
   # Crucial for your new setup
   type = "STANDARD" 

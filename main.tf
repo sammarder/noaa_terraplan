@@ -25,8 +25,20 @@ module "storage" {
 
 module "lambda" {
   source = "./modules/compute/lambda"
-  lambda_role = aws_iam_role.lambda_role.arn
+  lambda_role = module.permission.lambda_role
   pipeline_arn = aws_sfn_state_machine.noaa_pipeline.arn
   bucket_arn = module.storage.bucket_arn
   script_location = "${path.module}/scripts/"
+}
+
+module "permission" {
+  source = "./modules/permission"
+  key_arn = aws_kms_key.noaa_key.arn
+  glue_crawler = aws_glue_crawler.noaa_parquet_crawler.arn
+  glue_job = aws_glue_job.jsonl_to_parquet.arn
+  analyst_account = aws_organizations_account.analyst_account.id
+  bucket = module.storage.bucket_arn
+  archiver_arn = module.lambda.archiver_arn
+  caller_identity = data.aws_caller_identity.current.account_id
+  region = var.region
 }

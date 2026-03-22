@@ -4,7 +4,7 @@ locals {
 
 resource "aws_glue_job" "jsonl_to_parquet" {
   name     = local.glue_job_name
-  role_arn = aws_iam_role.glue_proc_role.arn
+  role_arn = module.permission.glue_proc_role
   command {
     name = "glueetl"
     # Point to the S3 path of the uploaded object
@@ -49,7 +49,7 @@ resource "aws_glue_catalog_database" "noaa_db" {
 resource "aws_glue_crawler" "noaa_parquet_crawler" {
   database_name = aws_glue_catalog_database.noaa_db.name
   name          = "noaa_parquet_crawler"
-  role          = aws_iam_role.glue_crawler_role.arn
+  role          = module.permission.glue_crawler_role
 
   catalog_target {
     database_name = aws_glue_catalog_table.manual_table.database_name
