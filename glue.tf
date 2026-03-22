@@ -14,7 +14,7 @@ resource "aws_glue_job" "jsonl_to_parquet" {
   glue_version      = "5.0"
   worker_type       = "G.1X"
   number_of_workers = 2 
-  connections       = [aws_glue_connection.vpc_connector.name]
+  connections       = [module.network.glue_connector_name]
   timeout = 10
   default_arguments = {
     "--enable-metrics" = "true"
