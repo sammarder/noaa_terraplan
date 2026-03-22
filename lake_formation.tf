@@ -51,7 +51,7 @@ resource "aws_lakeformation_permissions" "crawler_database_access" {
   permissions = ["CREATE_TABLE", "ALTER", "DESCRIBE"]
 
   database {
-    name = aws_glue_catalog_database.noaa_db.name
+    name = module.etl.noaa_catalog_db_name
   }
   
   # Ensure settings are applied before individual permissions
@@ -63,7 +63,7 @@ resource "aws_lakeformation_permissions" "terraform_db_access" {
   permissions = ["CREATE_TABLE", "DESCRIBE", "ALTER", "DROP"]
 
   database {
-    name = aws_glue_catalog_database.noaa_db.name
+    name = module.etl.noaa_catalog_db_name
   }
 }
 
@@ -73,7 +73,7 @@ resource "aws_lakeformation_permissions" "crawler_table_perms" {
   permissions = ["ALL", "ALTER", "DESCRIBE", "INSERT"]
 
   table {
-    database_name = aws_glue_catalog_database.noaa_db.name
+    database_name = module.etl.noaa_catalog_db_name
     wildcard      = true 
   }
   

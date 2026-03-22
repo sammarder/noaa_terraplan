@@ -4,17 +4,17 @@ locals {
 
 resource "aws_glue_job" "jsonl_to_parquet" {
   name     = local.glue_job_name
-  role_arn = module.permission.glue_proc_role
+  role_arn = var.glue_etl_role
   command {
     name = "glueetl"
     # Point to the S3 path of the uploaded object
-    script_location = "s3://${module.storage.bucket_id}/${aws_s3_object.templated_script.key}"
+    script_location = "s3://${var.bucket}/${aws_s3_object.templated_script.key}"
     python_version  = "3"
   }
   glue_version      = "5.0"
   worker_type       = "G.1X"
   number_of_workers = 2 
-  connections       = [module.network.glue_connector_name]
+  connections       = [var.connector_name]
   timeout = 10
   default_arguments = {
     "--enable-metrics" = "true"
@@ -23,21 +23,21 @@ resource "aws_glue_job" "jsonl_to_parquet" {
 }
 
 resource "aws_s3_object" "templated_script" {
-  bucket = module.storage.bucket_id
+  bucket = var.bucket
   key    = "scripts/process_jsonl.py"
 
   # Render the file with variables before uploading
-  content = templatefile("${path.module}/scripts/processor.tftpl", {
-    bucket_id = module.storage.bucket_id
+  content = templatefile("${var.root_dir}/scripts/processor.tftpl", {
+    bucket_id = var.bucket
     job_name = local.glue_job_name
   })
 
   content_type = "text/x-python"
 
   # Crucial: This ensures S3 updates if the template or variables change
-  etag = md5(templatefile("${path.module}/scripts/processor.tftpl", {
-    bucket_id = module.storage.bucket_id
-	job_name = local.glue_job_name
+  etag = md5(templatefile("${var.root_dir}/scripts/processor.tftpl", {
+    bucket_id = var.bucket
+    job_name = local.glue_job_name
   }))
 }
 
@@ -49,7 +49,7 @@ resource "aws_glue_catalog_database" "noaa_db" {
 resource "aws_glue_crawler" "noaa_parquet_crawler" {
   database_name = aws_glue_catalog_database.noaa_db.name
   name          = "noaa_parquet_crawler"
-  role          = module.permission.glue_crawler_role
+  role          = var.crawler_role
 
   catalog_target {
     database_name = aws_glue_catalog_table.manual_table.database_name
@@ -68,7 +68,7 @@ resource "aws_glue_catalog_table" "manual_table" {
   table_type    = "EXTERNAL_TABLE"
 
   storage_descriptor {
-    location      = "s3://${module.storage.bucket_id}/parquet/"
+    location      = "s3://${var.bucket}/parquet/"
     # You must provide a basic format for the Crawler to start
     input_format  = "org.apache.hadoop.mapred.TextInputFormat" 
     output_format = "org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat"

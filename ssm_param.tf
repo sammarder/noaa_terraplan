@@ -58,21 +58,21 @@ resource "aws_ssm_parameter" "glue_catalog_arn" {
   name        = "/noaa/glue/catalog_arn"
   description = "The ARN for the NOAA Glue Catalog DB"
   type        = "String"
-  value       = aws_glue_catalog_database.noaa_db.arn
+  value       = module.etl.noaa_catalog_db_arn
 }
 
 resource "aws_ssm_parameter" "glue_job_arn" {
   name        = "/noaa/glue/job_arn"
   description = "The ARN for the NOAA Glue Job"
   type        = "String"
-  value       = aws_glue_job.jsonl_to_parquet.arn
+  value       = module.etl.noaa_glue_etl_arn
 }
 
 resource "aws_ssm_parameter" "glue_crawler_arn" {
   name        = "/noaa/glue/crawler_arn"
   description = "The ARN for the NOAA Glue Crawler"
   type        = "String"
-  value       = aws_glue_crawler.noaa_parquet_crawler.arn
+  value       = module.etl.noaa_crawler_arn
 }
 
 resource "aws_ssm_parameter" "secondary_account_id" {
@@ -86,14 +86,14 @@ resource "aws_ssm_parameter" "glue_job_name" {
   name        = "/noaa/glue/job_name"
   description = "The Name for the NOAA Glue Job"
   type        = "String"
-  value       = aws_glue_job.jsonl_to_parquet.name
+  value       = module.etl.noaa_glue_etl_name
 }
 
 resource "aws_ssm_parameter" "glue_crawler_name" {
   name        = "/noaa/glue/crawler_name"
   description = "The Name for the NOAA Glue Job"
   type        = "String"
-  value       = aws_glue_crawler.noaa_parquet_crawler.name
+  value       = module.etl.noaa_glue_crawler_name
 }
 
 resource "aws_ssm_parameter" "state_machine_arn" {

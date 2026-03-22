@@ -34,8 +34,8 @@ module "lambda" {
 module "permission" {
   source = "./modules/permission"
   key_arn = module.encryption.key_arn
-  glue_crawler = aws_glue_crawler.noaa_parquet_crawler.arn
-  glue_job = aws_glue_job.jsonl_to_parquet.arn
+  glue_crawler = module.etl.noaa_crawler_arn
+  glue_job = module.etl.noaa_glue_etl_arn
   analyst_account = aws_organizations_account.analyst_account.id
   bucket = module.storage.bucket_arn
   archiver_arn = module.lambda.archiver_arn
@@ -50,9 +50,18 @@ module "encryption" {
 
 module "orchestration" {
   source = "./modules/compute/orchestration"
-  glue_job = aws_glue_job.jsonl_to_parquet.name
+  glue_job = module.etl.noaa_glue_etl_name
   bucket = module.storage.bucket_id
   archiver_arn = module.lambda.archiver_arn
   sf_permission = module.permission.sf_role
-  crawler_name = aws_glue_crawler.noaa_parquet_crawler.name
+  crawler_name = module.etl.noaa_glue_crawler_name
+}
+
+module "etl" {
+  source = "./modules/compute/etl"
+  glue_etl_role = module.permission.glue_proc_role
+  bucket = module.storage.bucket_id
+  connector_name = module.network.glue_connector_name
+  root_dir = path.module
+  crawler_role = module.permission.glue_crawler_role
 }
