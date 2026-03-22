@@ -148,7 +148,7 @@ resource "aws_iam_role_policy" "step_func_policy" {
 	  {
         Action   = "lambda:InvokeFunction"
         Effect   = "Allow"
-        Resource = "${aws_lambda_function.archive_lambda.arn}:*"
+        Resource = "${aws_lambda_function.archive_lambda.arn}"
       },
       {
         Action   = ["s3:ListBucket"]
