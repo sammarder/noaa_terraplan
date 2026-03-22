@@ -1,6 +1,6 @@
 resource "aws_sfn_state_machine" "noaa_pipeline" {
   name     = "noaa-data-pipeline"
-  role_arn = module.permission.sf_role
+  role_arn = var.sf_permission
   
   # Crucial for your new setup
   type = "STANDARD" 
@@ -8,9 +8,9 @@ resource "aws_sfn_state_machine" "noaa_pipeline" {
   # This pulls in your JSON definition and allows you to pass 
   # Terraform variables (like ARNs) directly into the JSON
   definition = templatefile("${path.module}/noaa_states.jsonata.tftpl", {
-    glue_job   = aws_glue_job.jsonl_to_parquet.name,
-    s3_bucket = module.storage.bucket_id,
-    lambda_archiver = module.lambda.archiver_arn,
-	crawler = aws_glue_crawler.noaa_parquet_crawler.name
+    glue_job   = var.glue_job,
+    s3_bucket = var.bucket,
+    lambda_archiver = var.archiver_arn,
+	crawler = var.crawler_name
   })
 }

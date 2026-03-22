@@ -16,7 +16,7 @@ resource "aws_ssm_parameter" "key_arn" {
   name        = "/noaa/kms/key_arn"
   description = "The ARN for the NOAA kms key"
   type        = "String"
-  value       = aws_kms_key.noaa_key.arn
+  value       = module.encryption.key_arn
 }
 
 resource "aws_ssm_parameter" "iam_lambda_arn" {
@@ -94,4 +94,11 @@ resource "aws_ssm_parameter" "glue_crawler_name" {
   description = "The Name for the NOAA Glue Job"
   type        = "String"
   value       = aws_glue_crawler.noaa_parquet_crawler.name
+}
+
+resource "aws_ssm_parameter" "state_machine_arn" {
+  name        = "/noaa/step_functions/noaa_machine"
+  description = "The ARN for the step function in NOAA"
+  type        = "String"
+  value       = module.orchestration.pipeline_arn
 }

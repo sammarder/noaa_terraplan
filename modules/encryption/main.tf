@@ -20,7 +20,7 @@ resource "aws_kms_key_policy" "noaa_key_policy" {
     Sid    = "Enable IAM User Permissions"
     Effect = "Allow"
     Principal = {
-      AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+      AWS = "arn:aws:iam::${var.caller_identity}:root"
     }
     Action   = "kms:*"
     Resource = "*"
@@ -29,7 +29,7 @@ resource "aws_kms_key_policy" "noaa_key_policy" {
     Sid    = "AllowLakeFormationToDecrypt"
     Effect = "Allow"                      
     Principal = {                         
-      AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/lakeformation.amazonaws.com/AWSServiceRoleForLakeFormationDataAccess"
+      AWS = "arn:aws:iam::${var.caller_identity}:role/aws-service-role/lakeformation.amazonaws.com/AWSServiceRoleForLakeFormationDataAccess"
     }
     Action = [                            
       "kms:Decrypt",
