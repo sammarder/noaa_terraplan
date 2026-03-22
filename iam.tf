@@ -98,7 +98,7 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
       {
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Effect   = "Allow"
-        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
+        Resource = "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:*"
       },
       {
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
@@ -122,7 +122,7 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
           "ssm:GetParameters",
           "ssm:GetParametersByPath"
         ]
-        Resource = "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/noaa/*"
+        Resource = "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/noaa/*"
       }
     ]
   })
@@ -138,7 +138,7 @@ resource "aws_iam_role_policy" "step_func_policy" {
       {
         Action   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
         Effect   = "Allow"
-        Resource = "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
+        Resource = "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}:*"
       },
       {
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
@@ -200,7 +200,7 @@ resource "aws_iam_role_policy" "glue_s3_access" {
           "glue:GetConnection"
         ],
         "Resource" : [
-          "arn:aws:glue:${data.aws_region.current.name}:489719310300:catalog"
+          "arn:aws:glue:${var.region}:${data.aws_caller_identity.current.account_id}:catalog"
         ]
       },
       {

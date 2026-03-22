@@ -52,7 +52,7 @@ resource "aws_security_group" "lambda_sg" {
 resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.data_vpc.id
   cidr_block        = "10.0.1.0/24"
-  availability_zone = "us-east-2a"
+  availability_zone = "${var.region}a"
 }
 
 resource "aws_glue_connection" "vpc_connector" {
@@ -68,11 +68,9 @@ resource "aws_glue_connection" "vpc_connector" {
 
 resource "aws_vpc_endpoint" "s3" {
   vpc_id            = aws_vpc.data_vpc.id
-  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  service_name      = "com.amazonaws.${var.region}.s3"
   vpc_endpoint_type = "Gateway"
 
   # This automatically updates your private subnet's routing
   route_table_ids = [aws_vpc.data_vpc.default_route_table_id]
 }
-
-
