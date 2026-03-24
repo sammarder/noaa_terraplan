@@ -66,6 +66,42 @@ resource "aws_iam_role" "glue_proc_role" {
   })
 }
 
+resource "aws_iam_role" "temperature_role" {
+  name = "data-lake-temp-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+		  AWS = "arn:aws:iam::${var.analyst_account}:root"
+          Service = "athena.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role" "wind_role" {
+  name = "data-lake-wind-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${var.analyst_account}:root"
+          Service = "athena.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
 resource "aws_iam_role_policy_attachment" "glue_service_crawler_attach" {
   role       = aws_iam_role.glue_crawler_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
@@ -86,7 +122,10 @@ resource "aws_iam_role_policy_attachment" "temperature_attach" {
   policy_arn = aws_iam_policy.analyst_access.arn
 }
 
-
+resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
+  role       = aws_iam_role.lambda_role.id
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
 
 resource "aws_iam_role_policy" "combined_lambda_policy" {
   name = "preprocessor_consolidated_policy"
@@ -115,7 +154,7 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
         Effect   = "Allow"
         Resource = var.key_arn
       },
-	  {
+      {
         Effect   = "Allow"
         Action   = [
           "ssm:GetParameter",
@@ -187,7 +226,7 @@ resource "aws_iam_role_policy" "glue_s3_access" {
           "s3:GetObject",
           "s3:PutObject",
           "s3:ListBucket",
-		  "s3:DeleteObject"
+          "s3:DeleteObject"
         ]
         Resource = [
           "${var.bucket}",
@@ -212,44 +251,6 @@ resource "aws_iam_role_policy" "glue_s3_access" {
         "Resource" : [
           var.key_arn
         ]
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role" "wind_role" {
-  name = "data-lake-wind-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${var.analyst_account}:root"
-          Service = "athena.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-
-
-resource "aws_iam_role" "temperature_role" {
-  name = "data-lake-temp-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-		  AWS = "arn:aws:iam::${var.analyst_account}:root"
-          Service = "athena.amazonaws.com"
-        }
       }
     ]
   })
@@ -351,9 +352,4 @@ resource "aws_iam_role_policy" "glue_crawler_policy" {
       }
     ]
   })
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
-  role       = aws_iam_role.lambda_role.id
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
 }

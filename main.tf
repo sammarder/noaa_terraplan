@@ -7,6 +7,9 @@ terraform {
   }
 }
 
+locals {
+  caller_id = data.aws_caller_identity.current.account_id
+}
 
 
 data "aws_caller_identity" "current" {}
@@ -39,8 +42,18 @@ module "permission" {
   analyst_account = aws_organizations_account.analyst_account.id
   bucket = module.storage.bucket_arn
   archiver_arn = module.lambda.archiver_arn
-  caller_identity = data.aws_caller_identity.current.account_id
+  caller_identity = local.caller_id
   region = var.region
+}
+
+module "lake" {
+  source = "./modules/permission/lake"
+  caller_id = local.caller_id
+  glue_proc_role = module.permission.glue_proc_role
+  bucket_arn = module.storage.bucket_arn
+  bucket_id = module.storage.bucket_id
+  glue_crawler_role = module.permission.glue_crawler_role
+  noaa_catalog_db_name = module.etl.noaa_catalog_db_name
 }
 
 module "encryption" {
