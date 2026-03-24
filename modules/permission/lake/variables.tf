@@ -1,4 +1,4 @@
-variable "caller_id" {
+variable "caller_arn" {
   type = string
 }
 

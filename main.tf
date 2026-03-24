@@ -9,6 +9,7 @@ terraform {
 
 locals {
   caller_id = data.aws_caller_identity.current.account_id
+  caller_arn = data.aws_caller_identity.current.arn
 }
 
 
@@ -48,7 +49,7 @@ module "permission" {
 
 module "lake" {
   source = "./modules/permission/lake"
-  caller_id = local.caller_id
+  caller_arn = local.caller_arn
   glue_proc_role = module.permission.glue_proc_role
   bucket_arn = module.storage.bucket_arn
   bucket_id = module.storage.bucket_id

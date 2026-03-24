@@ -1,7 +1,7 @@
 # 1. Admin Settings: Ensure these exist BEFORE permissions are managed
 resource "aws_lakeformation_data_lake_settings" "admin" {
   admins = [
-    var.caller_id, 
+    var.caller_arn, 
     var.glue_proc_role
   ]
 
@@ -37,7 +37,7 @@ resource "aws_lakeformation_permissions" "crawler_s3_access" {
 }
 
 resource "aws_lakeformation_permissions" "terraform_s3_access" {
-  principal   = var.caller_id
+  principal   = var.caller_arn
   permissions = ["DATA_LOCATION_ACCESS"]
 
   data_location {
@@ -59,7 +59,7 @@ resource "aws_lakeformation_permissions" "crawler_database_access" {
 }
 
 resource "aws_lakeformation_permissions" "terraform_db_access" {
-  principal   = var.caller_id
+  principal   = var.caller_arn
   permissions = ["CREATE_TABLE", "DESCRIBE", "ALTER", "DROP"]
 
   database {
