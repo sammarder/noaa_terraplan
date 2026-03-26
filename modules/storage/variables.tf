@@ -9,3 +9,7 @@ variable "s3_lambda_arn" {
 variable "lambda_allow" {
   type = string
 }
+
+variable "bucket_name" {
+  type = string
+}

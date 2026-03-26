@@ -3,7 +3,7 @@ variable "key_arn" {
 }
 
 variable "glue_crawler" {
-  description = "Primary crawler's arn"
+  description = "Primary crawler's name"
   type = string
 }
 
@@ -22,8 +22,8 @@ variable "bucket" {
   type = string
 }
 
-variable "archiver_arn" {
-  description = "Archiver's lambda arn"
+variable "archiver" {
+  description = "Archiver's name"
   type = string
 }
 

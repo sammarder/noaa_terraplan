@@ -1,131 +1,6 @@
-resource "aws_iam_role" "lambda_role" {
-  name = "preproc_role"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "lambda.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
 
-resource "aws_iam_role" "glue_crawler_role" {
-  name = "noaa_crawler_role"
 
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "glue.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role" "noaa_sf_role" {
-  name = "noaa_sf_role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "states.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role" "glue_proc_role" {
-  name = "noaa_glue_role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "glue.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role" "temperature_role" {
-  name = "data-lake-temp-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-		  AWS = "arn:aws:iam::${var.analyst_account}:root"
-          Service = "athena.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role" "wind_role" {
-  name = "data-lake-wind-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${var.analyst_account}:root"
-          Service = "athena.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "glue_service_crawler_attach" {
-  role       = aws_iam_role.glue_crawler_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
-}
-
-resource "aws_iam_role_policy_attachment" "glue_service_proc_attach" {
-  role       = aws_iam_role.glue_proc_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"
-}
-
-resource "aws_iam_role_policy_attachment" "wind_attach" {
-  role       = aws_iam_role.wind_role.name
-  policy_arn = aws_iam_policy.analyst_access.arn
-}
-
-resource "aws_iam_role_policy_attachment" "temperature_attach" {
-  role       = aws_iam_role.temperature_role.name
-  policy_arn = aws_iam_policy.analyst_access.arn
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_vpc_access" {
-  role       = aws_iam_role.lambda_role.id
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
-}
 
 resource "aws_iam_role_policy" "combined_lambda_policy" {
   name = "preprocessor_consolidated_policy"
@@ -187,12 +62,12 @@ resource "aws_iam_role_policy" "step_func_policy" {
 	  {
         Action   = "lambda:InvokeFunction"
         Effect   = "Allow"
-        Resource = "${var.archiver_arn}"
+        Resource = "arn:aws:lambda:${var.region}:${var.caller_identity}:function:${var.archiver}"
       },
       {
         Action   = ["s3:ListBucket"]
         Effect   = "Allow"
-        Resource = "${var.bucket}"
+        Resource = "arn:aws:s3:::${var.bucket}"
       },
       {
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
@@ -202,12 +77,12 @@ resource "aws_iam_role_policy" "step_func_policy" {
 	  {
         Action   = ["glue:StartJobRun", "glue:GetJobRun", "glue:BatchStopJobRun"]
         Effect   = "Allow"
-        Resource = var.glue_job
+        Resource = "arn:aws:glue:${var.region}:${var.caller_identity}:job/${var.glue_job}"
       },
 	  {
         Action   = ["glue:StartCrawler", "glue:GetCrawler"]
         Effect   = "Allow"
-        Resource = var.glue_crawler
+        Resource = "arn:aws:glue:${var.region}:${var.caller_identity}:crawler/${var.glue_crawler}"
       }
     ]
   })
@@ -249,7 +124,7 @@ resource "aws_iam_role_policy" "glue_s3_access" {
           "kms:Decrypt"
         ],
         "Resource" : [
-          var.key_arn
+          var.key_arn #this is fine
         ]
       }
     ]

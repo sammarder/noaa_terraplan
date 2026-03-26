@@ -10,6 +10,10 @@ terraform {
 locals {
   caller_id = data.aws_caller_identity.current.account_id
   caller_arn = data.aws_caller_identity.current.arn
+  glue_crawler = "noaa_parquet_crawler"
+  glue_job = "noaa_processor_job"
+  bucket = "sams-noaa-test-east-2"
+  archiver = "archiver"
 }
 
 
@@ -25,11 +29,12 @@ module "storage" {
   kms_key = module.encryption.key_arn
   s3_lambda_arn = module.lambda.preproc_arn
   lambda_allow = module.lambda.permission_id
+  bucket_name = local.bucket
 }
 
 module "lambda" {
   source = "./modules/compute/lambda"
-  lambda_role = module.permission.lambda_role
+  lambda_role = module.permission.role_arns.lambda
   pipeline_arn = module.orchestration.pipeline_arn
   bucket_arn = module.storage.bucket_arn
   script_location = "${path.module}/scripts/"
@@ -38,11 +43,11 @@ module "lambda" {
 module "permission" {
   source = "./modules/permission"
   key_arn = module.encryption.key_arn
-  glue_crawler = module.etl.noaa_crawler_arn
-  glue_job = module.etl.noaa_glue_etl_arn
+  glue_crawler = local.glue_crawler
+  glue_job = local.glue_job
   analyst_account = aws_organizations_account.analyst_account.id
-  bucket = module.storage.bucket_arn
-  archiver_arn = module.lambda.archiver_arn
+  bucket = local.bucket
+  archiver = local.archiver
   caller_identity = local.caller_id
   region = var.region
 }
@@ -50,10 +55,10 @@ module "permission" {
 module "lake" {
   source = "./modules/permission/lake"
   caller_arn = local.caller_arn
-  glue_proc_role = module.permission.glue_proc_role
+  glue_proc_role = module.permission.role_arns.glue_process
   bucket_arn = module.storage.bucket_arn
   bucket_id = module.storage.bucket_id
-  glue_crawler_role = module.permission.glue_crawler_role
+  glue_crawler_role = module.permission.role_arns.glue_crawler
   noaa_catalog_db_name = module.etl.noaa_catalog_db_name
 }
 
@@ -67,15 +72,17 @@ module "orchestration" {
   glue_job = module.etl.noaa_glue_etl_name
   bucket = module.storage.bucket_id
   archiver_arn = module.lambda.archiver_arn
-  sf_permission = module.permission.sf_role
+  sf_permission = module.permission.role_arns.step_function
   crawler_name = module.etl.noaa_glue_crawler_name
 }
 
 module "etl" {
   source = "./modules/compute/etl"
-  glue_etl_role = module.permission.glue_proc_role
+  glue_etl_role = module.permission.role_arns.glue_process
   bucket = module.storage.bucket_id
   connector_name = module.network.glue_connector_name
   root_dir = path.module
-  crawler_role = module.permission.glue_crawler_role
+  crawler_role = module.permission.role_arns.glue_crawler
+  job_name = local.glue_job
+  crawler_name = local.glue_crawler
 }

@@ -1,9 +1,5 @@
-locals {
-  glue_job_name = "noaa_processor_job"
-}
-
 resource "aws_glue_job" "jsonl_to_parquet" {
-  name     = local.glue_job_name
+  name     = var.job_name
   role_arn = var.glue_etl_role
   command {
     name = "glueetl"
@@ -29,7 +25,7 @@ resource "aws_s3_object" "templated_script" {
   # Render the file with variables before uploading
   content = templatefile("${var.root_dir}/scripts/processor.tftpl", {
     bucket_id = var.bucket
-    job_name = local.glue_job_name
+    job_name = var.job_name
   })
 
   content_type = "text/x-python"
@@ -37,7 +33,7 @@ resource "aws_s3_object" "templated_script" {
   # Crucial: This ensures S3 updates if the template or variables change
   etag = md5(templatefile("${var.root_dir}/scripts/processor.tftpl", {
     bucket_id = var.bucket
-    job_name = local.glue_job_name
+    job_name = var.job_name
   }))
 }
 
@@ -48,7 +44,7 @@ resource "aws_glue_catalog_database" "noaa_db" {
 
 resource "aws_glue_crawler" "noaa_parquet_crawler" {
   database_name = aws_glue_catalog_database.noaa_db.name
-  name          = "noaa_parquet_crawler"
+  name          = var.crawler_name
   role          = var.crawler_role
 
   catalog_target {

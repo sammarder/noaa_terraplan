@@ -17,3 +17,11 @@ variable "root_dir" {
 variable "crawler_role" {
   type = string
 }
+
+variable "job_name" {
+  type = string
+}
+
+variable "crawler_name" {
+  type = string
+}

@@ -23,21 +23,21 @@ resource "aws_ssm_parameter" "iam_lambda_arn" {
   name        = "/noaa/iam_role/lambda_arn"
   description = "The ARN for the NOAA Lambda IAM role"
   type        = "String"
-  value       = module.permission.lambda_role
+  value       = module.permission.role_arns.lambda
 }
 
 resource "aws_ssm_parameter" "iam_glue_arn" {
   name        = "/noaa/iam_role/glue_arn"
   description = "The ARN for the NOAA Glue Job IAM role"
   type        = "String"
-  value       = module.permission.glue_proc_role
+  value       = module.permission.role_arns.glue_process
 }
 
 resource "aws_ssm_parameter" "iam_glue_crawler_arn" {
   name        = "/noaa/iam_role/glue_crawler_arn"
   description = "The ARN for the NOAA Glue Crawler IAM role"
   type        = "String"
-  value       = module.permission.glue_crawler_role
+  value       = module.permission.role_arns.glue_crawler
 }
 
 resource "aws_ssm_parameter" "lambda_preproc_arn" {
