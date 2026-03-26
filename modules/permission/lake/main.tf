@@ -18,11 +18,11 @@ resource "aws_lakeformation_data_lake_settings" "admin" {
 
 # 2. S3 Registration: Needs to know it depends on the Bucket being ready
 resource "aws_lakeformation_resource" "s3_registration" {
-  arn                     = var.bucket_arn
+  arn                     = var.bucket.id
   use_service_linked_role = true
   
   # Ensure the bucket is fully created before LF tries to register it
-  depends_on = [var.bucket_id]
+  depends_on = [var.bucket]
 }
 
 # 3. Permissions: These MUST point to the registration, not just the bucket

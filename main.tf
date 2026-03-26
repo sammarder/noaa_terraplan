@@ -48,7 +48,7 @@ module "lambda" {
   source = "./modules/compute/lambda"
   lambda_role = module.permission.role_arns.lambda
   pipeline_arn = module.orchestration.pipeline_arn
-  bucket_arn = module.storage.bucket_arn
+  bucket_arn = module.storage.bucket_details.arn
   script_location = "${path.module}/scripts/"
   archiver = local.archiver
 }
@@ -59,8 +59,7 @@ module "lake" {
   source = "./modules/permission/lake"
   caller_arn = local.caller_arn
   glue_proc_role = module.permission.role_arns.glue_process
-  bucket_arn = module.storage.bucket_arn
-  bucket_id = module.storage.bucket_id
+  bucket = module.storage.bucket_details
   glue_crawler_role = module.permission.role_arns.glue_crawler
   noaa_catalog_db_name = module.etl.noaa_catalog_db_name
 }
@@ -73,7 +72,7 @@ module "encryption" {
 module "orchestration" {
   source = "./modules/compute/orchestration"
   glue_job = module.etl.noaa_glue_etl_name
-  bucket = module.storage.bucket_id
+  bucket = module.storage.bucket_details.id
   archiver_arn = module.lambda.archiver_arn
   sf_permission = module.permission.role_arns.step_function
   crawler_name = module.etl.noaa_glue_crawler_name
@@ -82,7 +81,7 @@ module "orchestration" {
 module "etl" {
   source = "./modules/compute/etl"
   glue_etl_role = module.permission.role_arns.glue_process
-  bucket = module.storage.bucket_id
+  bucket = module.storage.bucket_details.id
   connector_name = module.network.glue_connector_name
   root_dir = path.module
   crawler_role = module.permission.role_arns.glue_crawler

@@ -1,7 +1,9 @@
-output "bucket_id" {
-  value = aws_s3_bucket.noaa_bucket.id
-}
 
-output "bucket_arn" {
-  value = aws_s3_bucket.noaa_bucket.arn
+
+output "bucket_details" {
+  description = "Creating a bucket info object"
+  value = {
+    id = aws_s3_bucket.noaa_bucket.id
+    arn = aws_s3_bucket.noaa_bucket.arn
+  }
 }

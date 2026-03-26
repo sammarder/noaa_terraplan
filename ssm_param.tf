@@ -2,14 +2,14 @@ resource "aws_ssm_parameter" "bucket_arn" {
   name        = "/noaa/s3/bucket_arn"
   description = "The ARN for the NOAA test bucket"
   type        = "String"
-  value       = module.storage.bucket_arn
+  value       = module.storage.bucket_details.arn
 }
 
 resource "aws_ssm_parameter" "bucket_name" {
   name        = "/noaa/s3/bucket_name"
   description = "The name for the NOAA test bucket"
   type        = "String"
-  value       = module.storage.bucket_id
+  value       = module.storage.bucket_details.id
 }
 
 resource "aws_ssm_parameter" "key_arn" {
