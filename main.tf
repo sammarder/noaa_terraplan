@@ -24,6 +24,18 @@ module "network" {
   region          = var.region
 }
 
+module "permission" {
+  source = "./modules/permission"
+  key_arn = module.encryption.key_arn
+  glue_crawler = local.glue_crawler
+  glue_job = local.glue_job
+  analyst_account = aws_organizations_account.analyst_account.id
+  bucket = local.bucket
+  archiver = local.archiver
+  caller_identity = local.caller_id
+  region = var.region
+}
+
 module "storage" {
   source = "./modules/storage"
   kms_key = module.encryption.key_arn
@@ -38,19 +50,10 @@ module "lambda" {
   pipeline_arn = module.orchestration.pipeline_arn
   bucket_arn = module.storage.bucket_arn
   script_location = "${path.module}/scripts/"
+  archiver = local.archiver
 }
 
-module "permission" {
-  source = "./modules/permission"
-  key_arn = module.encryption.key_arn
-  glue_crawler = local.glue_crawler
-  glue_job = local.glue_job
-  analyst_account = aws_organizations_account.analyst_account.id
-  bucket = local.bucket
-  archiver = local.archiver
-  caller_identity = local.caller_id
-  region = var.region
-}
+
 
 module "lake" {
   source = "./modules/permission/lake"

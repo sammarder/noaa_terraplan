@@ -13,7 +13,7 @@ resource "aws_lambda_function" "s3_lambda" {
 
 resource "aws_lambda_function" "archive_lambda" {
   filename      = "archive_lambda_function_payload.zip"
-  function_name = "archiver"
+  function_name = var.archiver
   role          = var.lambda_role
   handler       = "archive_lambda.lambda_handler" # filename.function_name
   timeout       = 300

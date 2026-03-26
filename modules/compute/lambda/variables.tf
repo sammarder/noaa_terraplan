@@ -13,3 +13,7 @@ variable "bucket_arn" {
 variable "script_location" {
   type = string
 }
+
+variable "archiver" {
+  type = string
+}
