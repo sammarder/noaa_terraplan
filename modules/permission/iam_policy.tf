@@ -1,7 +1,3 @@
-
-
-
-
 resource "aws_iam_role_policy" "combined_lambda_policy" {
   name = "preprocessor_consolidated_policy"
   role = aws_iam_role.lambda_role.id
@@ -17,12 +13,12 @@ resource "aws_iam_role_policy" "combined_lambda_policy" {
       {
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Effect   = "Allow"
-        Resource = "${var.bucket}/*"
+        Resource = "arn:aws:s3:::${var.bucket}/*"
       },
       {
         Action   = ["s3:ListBucket"]
         Effect   = "Allow"
-        Resource = "${var.bucket}"
+        Resource = "arn:aws:s3:::${var.bucket}"
       },
       {
         Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
@@ -57,7 +53,7 @@ resource "aws_iam_role_policy" "step_func_policy" {
       {
         Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Effect   = "Allow"
-        Resource = "${var.bucket}/*"
+        Resource = "arn:aws:s3:::${var.bucket}/*"
       },
 	  {
         Action   = "lambda:InvokeFunction"
@@ -104,8 +100,8 @@ resource "aws_iam_role_policy" "glue_s3_access" {
           "s3:DeleteObject"
         ]
         Resource = [
-          "${var.bucket}",
-          "${var.bucket}/*"
+          "arn:aws:s3:::${var.bucket}",
+          "arn:aws:s3:::${var.bucket}/*"
         ]
       },
       {
@@ -207,7 +203,7 @@ resource "aws_iam_role_policy" "glue_crawler_policy" {
           "s3:PutObject"
         ],
         "Resource" : [
-          "${var.bucket}/parquet/*"
+          "arn:aws:s3:::${var.bucket}/parquet/*"
         ],
         "Condition" : {
           "StringEquals" : {
