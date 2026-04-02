@@ -4,6 +4,8 @@ provider "aws" {
   default_tags {
     tags = {
       Project = "noaa"
+	  Managed = "Terraform"
+	  Team = "Data Engineers"
     }
   }
 }

@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "noaa_bucket" {
-  bucket        = "sams-noaa-test-east-2"
+  bucket        = var.bucket_name
   force_destroy = true
 }
 

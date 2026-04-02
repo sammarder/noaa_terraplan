@@ -5,10 +5,8 @@ resource "aws_lambda_function" "s3_lambda" {
   handler       = "s3_lambda_trigger.lambda_handler" # filename.function_name
   timeout       = 120
   source_code_hash = data.archive_file.s3_lambda_zip.output_base64sha256
-
   
   runtime = "python3.12"
-
 }
 
 resource "aws_lambda_function" "archive_lambda" {
@@ -19,10 +17,8 @@ resource "aws_lambda_function" "archive_lambda" {
   timeout       = 300
   memory_size = 1024
   source_code_hash = data.archive_file.archive_lambda_zip.output_base64sha256
-
   
   runtime = "python3.12"
-
 }
 
 resource "aws_lambda_permission" "allow_s3" {
@@ -32,8 +28,6 @@ resource "aws_lambda_permission" "allow_s3" {
   principal     = "s3.amazonaws.com"
   source_arn    = var.bucket_arn
 }
-
-
 
 resource "aws_lambda_permission" "allow_states" {
   statement_id  = "AllowExecutionFromStateFunction"

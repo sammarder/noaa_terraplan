@@ -14,26 +14,19 @@ locals {
   glue_job = "noaa_processor_job"
   bucket = "sams-noaa-test-east-2"
   archiver = "archiver"
+  region = "us-east-2"
 }
-
 
 data "aws_caller_identity" "current" {}
 
 module "network" {
-  source              = "./modules/vpc"
-  region          = var.region
+  source              = "./modules/network"
+  region          = local.region
 }
 
-module "permission" {
-  source = "./modules/permission"
-  key_arn = module.encryption.key_arn
-  glue_crawler = local.glue_crawler
-  glue_job = local.glue_job
-  analyst_account = aws_organizations_account.analyst_account.id
-  bucket = local.bucket
-  archiver = local.archiver
-  caller_identity = local.caller_id
-  region = var.region
+module "encryption" {
+  source = "./modules/encryption"
+  caller_identity = data.aws_caller_identity.current.account_id
 }
 
 module "storage" {
@@ -51,22 +44,6 @@ module "lambda" {
   bucket_arn = module.storage.bucket_details.arn
   script_location = "${path.module}/scripts/"
   archiver = local.archiver
-}
-
-
-
-module "lake" {
-  source = "./modules/permission/lake"
-  caller_arn = local.caller_arn
-  glue_proc_role = module.permission.role_arns.glue_process
-  bucket = module.storage.bucket_details
-  glue_crawler_role = module.permission.role_arns.glue_crawler
-  noaa_catalog_db_name = module.etl.noaa_catalog_db_name
-}
-
-module "encryption" {
-  source = "./modules/encryption"
-  caller_identity = data.aws_caller_identity.current.account_id
 }
 
 module "orchestration" {
@@ -87,4 +64,24 @@ module "etl" {
   crawler_role = module.permission.role_arns.glue_crawler
   job_name = local.glue_job
   crawler_name = local.glue_crawler
+}
+
+module "permission" {
+  source = "./modules/permission"
+  key_arn = module.encryption.key_arn
+  glue_crawler = local.glue_crawler
+  glue_job = local.glue_job
+  analyst_account = aws_organizations_account.analyst_account.id
+  bucket = local.bucket
+  archiver = local.archiver
+  caller_identity = local.caller_id
+  region = local.region
+}
+module "lake" {
+  source = "./modules/permission/lake"
+  caller_arn = local.caller_arn
+  glue_proc_role = module.permission.role_arns.glue_process
+  bucket = module.storage.bucket_details
+  glue_crawler_role = module.permission.role_arns.glue_crawler
+  noaa_catalog_db_name = module.etl.noaa_catalog_db_name
 }
