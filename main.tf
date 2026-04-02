@@ -10,11 +10,11 @@ terraform {
 locals {
   caller_id = data.aws_caller_identity.current.account_id
   caller_arn = data.aws_caller_identity.current.arn
-  glue_crawler = "noaa_parquet_crawler"
-  glue_job = "noaa_processor_job"
-  bucket = "sams-noaa-test-east-2"
-  archiver = "archiver"
-  region = "us-east-2"
+  glue_crawler = var.glue_crawler
+  glue_job = var.glue_job
+  bucket = var.bucket
+  archiver = var.archiver
+  region = var.region
 }
 
 data "aws_caller_identity" "current" {}
