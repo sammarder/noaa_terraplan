@@ -1,20 +1,5 @@
 # 1. Admin Settings: Ensure these exist BEFORE permissions are managed
-resource "aws_lakeformation_data_lake_settings" "admin" {
-  admins = [
-    var.caller_arn, 
-    var.glue_proc_role
-  ]
 
-  create_database_default_permissions {
-    permissions = ["ALL"]
-    principal   = "IAM_ALLOWED_PRINCIPALS"
-  }
-
-  create_table_default_permissions {
-    permissions = ["ALL"]
-    principal   = "IAM_ALLOWED_PRINCIPALS"
-  }
-}
 
 # 2. S3 Registration: Needs to know it depends on the Bucket being ready
 resource "aws_lakeformation_resource" "s3_registration" {
