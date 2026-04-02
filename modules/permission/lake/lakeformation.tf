@@ -38,9 +38,6 @@ resource "aws_lakeformation_permissions" "crawler_database_access" {
   database {
     name = var.noaa_catalog_db_name
   }
-  
-  # Ensure settings are applied before individual permissions
-  depends_on = [aws_lakeformation_data_lake_settings.admin]
 }
 
 resource "aws_lakeformation_permissions" "terraform_db_access" {
