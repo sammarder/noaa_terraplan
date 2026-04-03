@@ -87,5 +87,4 @@ module "lake" {
   bucket = module.storage.bucket_details
   glue_crawler_role = module.permission.role_arns.glue_crawler
   noaa_catalog_db_name = module.etl.noaa_catalog_db_name
-  glue_catalog_db = local.glue_catalog_db
 }
