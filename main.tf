@@ -65,6 +65,7 @@ module "etl" {
   crawler_role = module.permission.role_arns.glue_crawler
   job_name = local.glue_job
   crawler_name = local.glue_crawler
+  glue_catalog_db = local.glue_catalog_db
 }
 
 module "permission" {
