@@ -39,7 +39,7 @@ resource "aws_s3_object" "templated_script" {
 
 
 resource "aws_glue_catalog_database" "noaa_db" {
-  name = "noaa_processed_data"
+  name = var.glue_catalog_db
 }
 
 resource "aws_glue_crawler" "noaa_parquet_crawler" {
