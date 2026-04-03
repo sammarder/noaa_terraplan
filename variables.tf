@@ -3,6 +3,11 @@ variable "glue_crawler" {
   default = "noaa_parquet_crawler"
 }
 
+variable "glue_catalog_db" {
+  type = string
+  default = "noaa-processed-data"
+}
+
 variable "glue_job" {
   type = string
   default = "noaa_processor_job"
