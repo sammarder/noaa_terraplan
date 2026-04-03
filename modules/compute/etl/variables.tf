@@ -10,6 +10,10 @@ variable "connector_name" {
   type = string
 }
 
+variable "glue_catalog_db" {
+  type = string
+}
+
 variable "root_dir" {
   type = string
 }
