@@ -15,6 +15,7 @@ locals {
   bucket = var.bucket
   archiver = var.archiver
   region = var.region
+  glue_catalog_db = var.glue_catalog_db
 }
 
 data "aws_caller_identity" "current" {}
@@ -77,6 +78,7 @@ module "permission" {
   caller_identity = local.caller_id
   region = local.region
 }
+
 module "lake" {
   source = "./modules/permission/lake"
   caller_arn = local.caller_arn
@@ -84,4 +86,5 @@ module "lake" {
   bucket = module.storage.bucket_details
   glue_crawler_role = module.permission.role_arns.glue_crawler
   noaa_catalog_db_name = module.etl.noaa_catalog_db_name
+  glue_catalog_db = local.glue_catalog_db
 }
