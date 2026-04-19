@@ -18,11 +18,6 @@ job.init(args['JOB_NAME'], args)
 input_path = "s3://${bucket_id}/extracted_data/"
 output_path = "s3://${bucket_id}/parquet/"
 
-
-df_new = df.withColumn("category", 
-    F.when(F.col("age") >= 18, "Adult").otherwise("Minor")
-)
-
 df = spark.read.json(input_path).withColumn("heat", 
     F.when(F.col("temperature_value") <= 3.0, "Freezing!")
     .when(F.col("temperature_value") >= 30.0, "Scorching!")
