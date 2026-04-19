@@ -4,6 +4,7 @@ from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
+import pyspark.sql.functions as F
 
 # Glue boilerplate (Required for 'glueetl' command)
 args = getResolvedOptions(sys.argv, ['JOB_NAME'])
@@ -17,7 +18,15 @@ job.init(args['JOB_NAME'], args)
 input_path = "s3://${bucket_id}/extracted_data/"
 output_path = "s3://${bucket_id}/parquet/"
 
-df = spark.read.json(input_path)
+
+df_new = df.withColumn("category", 
+    F.when(F.col("age") >= 18, "Adult").otherwise("Minor")
+)
+
+df = spark.read.json(input_path).withColumn("heat", 
+    F.when(F.col("temperature_value") <= 3.0, "Freezing!")
+    .when(F.col("temperature_value") >= 30.0, "Scorching!")
+    .otherwise("This is nice"))
 df.write.mode("overwrite").parquet(output_path)
 
 job.commit()
