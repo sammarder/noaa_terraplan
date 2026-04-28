@@ -3,6 +3,7 @@ import requests
 from datetime import datetime, timedelta
 import json
 import argparse
+from pathlib import Path
 
 def cleanupFeature(feature):
     feature.pop('geometry')
@@ -35,8 +36,8 @@ def getPops(properties):
     return pops
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--days_ago", type=int, default=0)
-parser.add_argument("--page_size", type=int, default=200)
+parser.add_argument("--days_ago", type=int, default=1)
+parser.add_argument("--page_size", type=int, default=250)
 parser.add_argument("--fast_forward", type=int, default=0)
 args = parser.parse_args()
 daysago = args.days_ago
@@ -61,9 +62,9 @@ date = datetime.now() - timedelta(days=daysago)
 midnight = date.strftime("%Y-%m-%dT00:00:00Z").replace(":", "%3A")
 eod = date.strftime("%Y-%m-%dT23:59:59Z").replace(":", "%3A")
 day = date.strftime("%Y-%m-%d")
+year = date.strftime("%Y")
+month = date.strftime("%m")
 
-
-stationsURL = f"https://api.weather.gov/stations?limit={pageSize}"
 stationsResponse = requests.get(stationsURL)
 
 if (stationsResponse.status_code != 200):
@@ -85,7 +86,9 @@ for station in stations:
         features = observationData['features']
         for feature in features:
             featureson = {"station_id": stationId, **cleanupFeature(feature)}
-            with open(f"data/{day}.jsonl", "a") as a:
+            directory = Path(f"data/{year}/{month}")
+            directory.mkdir(parents=True, exist_ok=True)
+            with open(f"data/{year}/{month}/{day}.jsonl", "a") as a:
                 a.write(json.dumps(featureson) + "\n")
     except requests.exceptions.JSONDecodeError:
         print(f"Skipping station {stationId}: Received invalid JSON or empty response.")
