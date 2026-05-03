@@ -6,7 +6,7 @@ from awsglue.context import GlueContext
 from awsglue.job import Job
 import pyspark.sql.functions as F
 
-# Glue boilerplate (Required for 'glueetl' command)
+# Glue boilerplate
 args = getResolvedOptions(sys.argv, ['JOB_NAME'])
 sc = SparkContext()
 glueContext = GlueContext(sc)
@@ -18,10 +18,24 @@ job.init(args['JOB_NAME'], args)
 input_path = "s3://${bucket_id}/extracted_data/"
 output_path = "s3://${bucket_id}/parquet/"
 
-df = spark.read.json(input_path).withColumn("heat", 
-    F.when(F.col("temperature_value") <= 3.0, "Freezing!")
-    .when(F.col("temperature_value") >= 30.0, "Scorching!")
-    .otherwise("This is nice"))
-df.write.mode("overwrite").parquet(output_path)
+# 1. Read with recursion
+# 2. Extract Year/Month from path
+# 3. Apply your heat logic
+df = (spark.read
+    .option("recursiveFileLookup", "true")
+    .json(input_path)
+    .withColumn("year_part", F.regexp_extract(F.input_file_name(), r'/(\d{4})/(\d{2})/', 1))
+    .withColumn("month_part", F.regexp_extract(F.input_file_name(), r'/(\d{4})/(\d{2})/', 2))
+    .withColumn("heat", 
+        F.when(F.col("temperature_value") <= 3.0, "Freezing!")
+        .when(F.col("temperature_value") >= 30.0, "Scorching!")
+        .otherwise("This is nice"))
+)
+
+# Write using partitionBy to create the physical S3 folder structure
+(df.write
+    .mode("overwrite")
+    .partitionBy("year_part", "month_part")
+    .parquet(output_path))
 
 job.commit()
